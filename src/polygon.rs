@@ -9,16 +9,20 @@ use hex::{
 };
 use std::{cell::RefCell, f32::INFINITY, rc::Rc};
 
+pub trait Callback<'a>:
+    FnMut(usize, usize, &mut EntityManager, &mut ComponentManager) + 'a
+{
+}
+
 pub struct Polygon<'a> {
     pub points: Vec<Vector2<f32>>,
-    pub callback:
-        Rc<RefCell<dyn FnMut(usize, usize, &mut EntityManager, &mut ComponentManager) + 'a>>,
+    pub callback: Rc<RefCell<dyn Callback<'a>>>,
 }
 
 impl<'a> Polygon<'a> {
-    pub fn new<F>(points: Vec<Vector2<f32>>, callback: F) -> Self
+    pub fn new<C>(points: Vec<Vector2<f32>>, callback: C) -> Self
     where
-        F: FnMut(usize, usize, &mut EntityManager, &mut ComponentManager) + 'a,
+        C: Callback<'a>,
     {
         Self {
             points,

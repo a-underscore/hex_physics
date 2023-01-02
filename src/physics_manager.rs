@@ -1,22 +1,14 @@
 use crate::polygon::Polygon;
 use hex::{
     anyhow,
-    assets::Shape,
-    cgmath::{InnerSpace, Rad, Vector2, Vector3, Vector4, Zero},
-    components::{Camera, Sprite, Transform},
+    components::Transform,
     ecs::{
         component_manager::ComponentManager,
         entity_manager::EntityManager,
         system_manager::{Ev, System},
-        world::World,
-    },
-    glium::glutin::{
-        dpi::{PhysicalPosition, PhysicalSize},
-        event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     },
     glium::Display,
 };
-use std::{collections::HashMap, f32, time::Instant};
 
 pub struct PhysicsManager;
 
@@ -35,8 +27,8 @@ impl<'a> System<'a> for PhysicsManager {
                 .filter_map(|e| {
                     Some((
                         e,
-                        component_manager.get::<Polygon>(*e, &entity_manager)?,
-                        component_manager.get::<Transform>(*e, &entity_manager)?,
+                        component_manager.get::<Polygon>(*e, entity_manager)?,
+                        component_manager.get::<Transform>(*e, entity_manager)?,
                     ))
                 })
                 .collect();
