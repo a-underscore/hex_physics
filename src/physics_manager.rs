@@ -20,37 +20,49 @@ impl<'a> System<'a> for PhysicsManager {
         entity_manager: &mut EntityManager,
         component_manager: &mut ComponentManager,
     ) -> anyhow::Result<()> {
-        let callbacks = {
+        let collisions = {
             let mut objects: Vec<_> = entity_manager
                 .entities
                 .keys()
+                .copied()
                 .filter_map(|e| {
-                    Some((
-                        e,
-                        component_manager.get::<Polygon>(*e, entity_manager)?,
-                        component_manager.get::<Transform>(*e, entity_manager)?,
-                    ))
+                    component_manager
+                        .get_cached_val::<Polygon>(e, entity_manager)
+                        .and_then(|p| {
+                            Some((
+                                p,
+                                e,
+                                component_manager.get_cached::<Polygon>(p)?,
+                                component_manager.get::<Transform>(e, entity_manager)?,
+                            ))
+                        })
                 })
                 .collect();
 
-            let mut callbacks = Vec::new();
+            let mut collisions = Vec::new();
 
-            while let Some((ae, a, at)) = objects.pop() {
-                for (be, b, bt) in &objects {
+            while let Some((ac, ae, a, at)) = objects.pop() {
+                for (bc, be, b, bt) in &objects {
                     if a.intersecting(at, b, bt) {
-                        callbacks.extend([
-                            (*ae, **be, a.callback.clone()),
-                            (**be, *ae, b.callback.clone()),
-                        ]);
+                        let a = (ac, ae);
+                        let b = (*bc, *be);
+
+                        collisions.extend([(a, b), (b, a)]);
                     }
                 }
             }
 
-            callbacks
+            collisions
         };
 
-        for (ae, be, c) in callbacks {
-            c.try_borrow_mut()?(ae, be, entity_manager, component_manager);
+        for ((ac, ae), (bc, be)) in collisions {
+            if let Some(p) = component_manager.get_cached_mut::<Polygon>(ac) {
+                p.collisions.push(be);
+            }
+
+            if let Some(p) = component_manager.get_cached_mut::<Polygon>(bc) {
+                p.collisions.push(ae);
+            }
         }
 
         Ok(())

@@ -2,31 +2,43 @@ use hex::{
     cgmath::{InnerSpace, Vector2},
     cid,
     components::Transform,
-    ecs::{
-        component_manager::{Component, ComponentManager},
-        entity_manager::EntityManager,
-    },
+    ecs::component_manager::Component,
 };
-use std::{cell::RefCell, f32::INFINITY, rc::Rc};
+use std::f32::INFINITY;
 
-pub trait Callback<'a>:
-    FnMut(usize, usize, &mut EntityManager, &mut ComponentManager) + 'a
-{
-}
-
-pub struct Polygon<'a> {
+pub struct Polygon {
     pub points: Vec<Vector2<f32>>,
-    pub callback: Rc<RefCell<dyn Callback<'a>>>,
+    pub collisions: Vec<usize>,
 }
 
-impl<'a> Polygon<'a> {
-    pub fn new<C>(points: Vec<Vector2<f32>>, callback: C) -> Self
-    where
-        C: Callback<'a>,
-    {
+impl Polygon {
+    pub fn new(points: Vec<Vector2<f32>>) -> Self {
         Self {
             points,
-            callback: Rc::new(RefCell::new(callback)),
+            collisions: Vec::new(),
+        }
+    }
+
+    pub fn rect(dims: Vector2<f32>) -> Self {
+        let dims = dims / 2.0;
+
+        Self::new(vec![
+            Vector2::new(-dims.x, -dims.y),
+            Vector2::new(-dims.x, dims.y),
+            Vector2::new(dims.x, -dims.y),
+            Vector2::new(dims.x, dims.y),
+        ])
+    }
+
+    fn proj(&self, axis: Vector2<f32>, p: Vector2<f32>, min_proj: &mut f32, max_proj: &mut f32) {
+        let proj = axis.dot(p);
+
+        if proj < *min_proj {
+            *min_proj = proj;
+        }
+
+        if proj > *max_proj {
+            *max_proj = proj;
         }
     }
 
@@ -61,27 +73,11 @@ impl<'a> Polygon<'a> {
             let mut other_min_proj = INFINITY;
 
             for p in &points {
-                let proj = axis.dot(*p);
-
-                if proj < min_proj {
-                    min_proj = proj;
-                }
-
-                if proj > max_proj {
-                    max_proj = proj;
-                }
+                self.proj(axis, *p, &mut min_proj, &mut max_proj);
             }
 
             for p in &other_points {
-                let proj = axis.dot(*p);
-
-                if proj < other_min_proj {
-                    other_min_proj = proj;
-                }
-
-                if proj > other_max_proj {
-                    other_max_proj = proj;
-                }
+                self.proj(axis, *p, &mut other_min_proj, &mut other_max_proj);
             }
 
             if max_proj < other_min_proj || min_proj > other_max_proj {
@@ -93,7 +89,7 @@ impl<'a> Polygon<'a> {
     }
 }
 
-impl<'a> Component for Polygon<'a> {
+impl Component for Polygon {
     fn id() -> usize {
         cid!()
     }
