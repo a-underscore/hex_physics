@@ -10,6 +10,7 @@ use hex::{
     glium::Display,
 };
 
+#[derive(Default)]
 pub struct PhysicsManager;
 
 impl<'a> System<'a> for PhysicsManager {
