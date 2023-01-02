@@ -9,13 +9,13 @@ use hex::{
 };
 use std::{cell::RefCell, f32::INFINITY, rc::Rc};
 
-pub struct Object<'a> {
+pub struct Polygon<'a> {
     pub points: Vec<Vector2<f32>>,
     pub callback:
         Rc<RefCell<dyn FnMut(usize, usize, &mut EntityManager, &mut ComponentManager) + 'a>>,
 }
 
-impl<'a> Object<'a> {
+impl<'a> Polygon<'a> {
     pub fn new<F>(points: Vec<Vector2<f32>>, callback: F) -> Self
     where
         F: FnMut(usize, usize, &mut EntityManager, &mut ComponentManager) + 'a,
@@ -89,7 +89,7 @@ impl<'a> Object<'a> {
     }
 }
 
-impl<'a> Component for Object<'a> {
+impl<'a> Component for Polygon<'a> {
     fn id() -> usize {
         cid!()
     }

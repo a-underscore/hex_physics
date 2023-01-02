@@ -1,4 +1,4 @@
-use crate::object::Object;
+use crate::polygon::Polygon;
 use hex::{
     anyhow,
     assets::Shape,
@@ -35,7 +35,7 @@ impl<'a> System<'a> for PhysicsManager {
                 .filter_map(|e| {
                     Some((
                         e,
-                        component_manager.get::<Object>(*e, &entity_manager)?,
+                        component_manager.get::<Polygon>(*e, &entity_manager)?,
                         component_manager.get::<Transform>(*e, &entity_manager)?,
                     ))
                 })
