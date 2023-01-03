@@ -27,7 +27,10 @@ impl<'a> System<'a> for PhysicsManager {
                             Some((
                                 p,
                                 e,
-                                world.component_manager.get_cached::<Polygon>(p)?,
+                                world
+                                    .component_manager
+                                    .get_cached::<Polygon>(p)
+                                    .and_then(|p| p.active.then_some(p))?,
                                 world
                                     .component_manager
                                     .get::<Transform>(e, &world.entity_manager)?,

@@ -8,25 +8,30 @@ use hex::{
 pub struct Polygon {
     pub points: Vec<Vector2<f32>>,
     pub collisions: Vec<usize>,
+    pub active: bool,
 }
 
 impl Polygon {
-    pub fn new(points: Vec<Vector2<f32>>) -> Self {
+    pub fn new(points: Vec<Vector2<f32>>, active: bool) -> Self {
         Self {
             points,
             collisions: Vec::new(),
+            active,
         }
     }
 
-    pub fn rect(dims: Vector2<f32>) -> Self {
+    pub fn rect(dims: Vector2<f32>, active: bool) -> Self {
         let dims = dims / 2.0;
 
-        Self::new(vec![
-            Vector2::new(-dims.x, -dims.y),
-            Vector2::new(-dims.x, dims.y),
-            Vector2::new(dims.x, -dims.y),
-            Vector2::new(dims.x, dims.y),
-        ])
+        Self::new(
+            vec![
+                Vector2::new(-dims.x, -dims.y),
+                Vector2::new(-dims.x, dims.y),
+                Vector2::new(dims.x, -dims.y),
+                Vector2::new(dims.x, dims.y),
+            ],
+            active,
+        )
     }
 
     // Adapted from https://github.com/winstxnhdw/2d-separating-axis-theorem
