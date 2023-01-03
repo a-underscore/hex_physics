@@ -4,7 +4,6 @@ use hex::{
     components::Transform,
     ecs::component_manager::Component,
 };
-use std::f32::INFINITY;
 
 pub struct Polygon {
     pub points: Vec<Vector2<f32>>,
@@ -30,63 +29,80 @@ impl Polygon {
         ])
     }
 
-    fn proj(&self, axis: Vector2<f32>, p: Vector2<f32>, min_proj: &mut f32, max_proj: &mut f32) {
-        let proj = axis.dot(p);
+    // Adapted from https://github.com/winstxnhdw/2d-separating-axis-theorem
 
-        if proj < *min_proj {
-            *min_proj = proj;
-        }
-
-        if proj > *max_proj {
-            *max_proj = proj;
-        }
+    fn normalized_proj_axis(current: Vector2<f32>, next: Vector2<f32>) -> Vector2<f32> {
+        Vector2::new(-(next.y - current.y), next.x - current.x).normalize()
     }
 
-    pub fn intersecting(
-        &self,
-        transform: &Transform,
-        other: &Self,
-        other_transform: &Transform,
-    ) -> bool {
-        let points = self
+    fn projs(
+        a_points: &Vec<Vector2<f32>>,
+        b_points: &Vec<Vector2<f32>>,
+        axis_normalized: Vector2<f32>,
+    ) -> (Vec<f32>, Vec<f32>) {
+        let mut a_projs = Vec::new();
+        let mut b_projs = Vec::new();
+
+        for (a, b) in a_points.iter().zip(b_points.iter()) {
+            let a_proj = axis_normalized.dot(*a);
+            let b_proj = axis_normalized.dot(*b);
+
+            a_projs.push(a_proj);
+            b_projs.push(b_proj);
+        }
+
+        (a_projs, b_projs)
+    }
+
+    fn overlapping(projs_a: Vec<f32>, projs_b: Vec<f32>) -> bool {
+        let max_a = projs_a.iter().max_by(|a, b| a.partial_cmp(b).unwrap());
+        let min_a = projs_a.iter().min_by(|a, b| a.partial_cmp(b).unwrap());
+        let max_b = projs_b.iter().max_by(|a, b| a.partial_cmp(b).unwrap());
+        let min_b = projs_b.iter().min_by(|a, b| a.partial_cmp(b).unwrap());
+
+        !(max_a < min_b || max_b < min_a)
+    }
+
+    pub fn intersecting(&self, transform: &Transform, b: &Self, b_transform: &Transform) -> bool {
+        let a_bounds = self
             .points
             .iter()
             .cloned()
             .map(|p| (transform.matrix() * p.extend(1.0)).truncate())
             .collect::<Vec<_>>();
-        let other_points = other
+        let b_bounds = b
             .points
             .iter()
             .cloned()
-            .map(|o| (other_transform.matrix() * o.extend(1.0)).truncate())
+            .map(|p| (b_transform.matrix() * p.extend(1.0)).truncate())
             .collect::<Vec<_>>();
 
-        for i in 0..points.len() {
-            let current = points[i];
-            let next = points[(i + 1) % points.len()];
-            let edge = next - current;
-            let axis = Vector2::new(-edge.y, edge.x);
+        for i in 0..a_bounds.len() {
+            let current = a_bounds[i];
+            let next = a_bounds[(i + 1) % a_bounds.len()];
+            let axis = Self::normalized_proj_axis(current, next);
+            let (a_projs, b_projs) = Self::projs(&a_bounds, &b_bounds, axis);
 
-            let mut max_proj = -INFINITY;
-            let mut min_proj = INFINITY;
-            let mut other_max_proj = -INFINITY;
-            let mut other_min_proj = INFINITY;
-
-            for p in &points {
-                self.proj(axis, *p, &mut min_proj, &mut max_proj);
-            }
-
-            for p in &other_points {
-                self.proj(axis, *p, &mut other_min_proj, &mut other_max_proj);
-            }
-
-            if max_proj < other_min_proj || min_proj > other_max_proj {
-                return true;
+            if !Self::overlapping(a_projs, b_projs) {
+                return false;
             }
         }
 
-        false
+        for i in 0..b_bounds.len() {
+            let current = b_bounds[i];
+            let next = b_bounds[(i + 1) % a_bounds.len()];
+            let axis = Self::normalized_proj_axis(current, next);
+            let (a_projs, b_projs) = Self::projs(&a_bounds, &b_bounds, axis);
+
+            if !Self::overlapping(a_projs, b_projs) {
+                return false;
+            }
+        }
+
+        true
     }
+
+    // End adapted code
 }
 
 impl Component for Polygon {
