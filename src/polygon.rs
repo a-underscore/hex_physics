@@ -36,8 +36,8 @@ impl Polygon {
     }
 
     fn projs(
-        a_points: &Vec<Vector2<f32>>,
-        b_points: &Vec<Vector2<f32>>,
+        a_points: &[Vector2<f32>],
+        b_points: &[Vector2<f32>],
         axis_normalized: Vector2<f32>,
     ) -> (Vec<f32>, Vec<f32>) {
         let mut a_projs = Vec::new();
