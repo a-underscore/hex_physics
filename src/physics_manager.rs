@@ -3,38 +3,34 @@ use hex::{
     anyhow,
     components::Transform,
     ecs::{
-        component_manager::ComponentManager,
-        entity_manager::EntityManager,
         system_manager::{Ev, System},
+        world::World,
     },
-    glium::Display,
 };
 
 #[derive(Default)]
 pub struct PhysicsManager;
 
 impl<'a> System<'a> for PhysicsManager {
-    fn update(
-        &mut self,
-        _: &Display,
-        _: &mut Ev,
-        entity_manager: &mut EntityManager,
-        component_manager: &mut ComponentManager,
-    ) -> anyhow::Result<()> {
+    fn update(&mut self, _: &mut Ev, world: &mut World) -> anyhow::Result<()> {
         let collisions = {
-            let mut objects: Vec<_> = entity_manager
+            let mut objects: Vec<_> = world
+                .entity_manager
                 .entities
                 .keys()
                 .copied()
                 .filter_map(|e| {
-                    component_manager
-                        .get_cached_val::<Polygon>(e, entity_manager)
+                    world
+                        .component_manager
+                        .get_cached_val::<Polygon>(e, &world.entity_manager)
                         .and_then(|p| {
                             Some((
                                 p,
                                 e,
-                                component_manager.get_cached::<Polygon>(p)?,
-                                component_manager.get::<Transform>(e, entity_manager)?,
+                                world.component_manager.get_cached::<Polygon>(p)?,
+                                world
+                                    .component_manager
+                                    .get::<Transform>(e, &world.entity_manager)?,
                             ))
                         })
                 })
@@ -57,11 +53,11 @@ impl<'a> System<'a> for PhysicsManager {
         };
 
         for ((ac, ae), (bc, be)) in collisions {
-            if let Some(p) = component_manager.get_cached_mut::<Polygon>(ac) {
+            if let Some(p) = world.component_manager.get_cached_mut::<Polygon>(ac) {
                 p.collisions.push(be);
             }
 
-            if let Some(p) = component_manager.get_cached_mut::<Polygon>(bc) {
+            if let Some(p) = world.component_manager.get_cached_mut::<Polygon>(bc) {
                 p.collisions.push(ae);
             }
         }
