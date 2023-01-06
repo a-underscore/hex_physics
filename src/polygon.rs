@@ -60,10 +60,10 @@ impl Polygon {
     }
 
     fn overlapping(projs_a: Vec<f32>, projs_b: Vec<f32>) -> bool {
-        let max_a = projs_a.iter().max_by(|a, b| a.partial_cmp(b).unwrap());
-        let min_a = projs_a.iter().min_by(|a, b| a.partial_cmp(b).unwrap());
-        let max_b = projs_b.iter().max_by(|a, b| a.partial_cmp(b).unwrap());
-        let min_b = projs_b.iter().min_by(|a, b| a.partial_cmp(b).unwrap());
+        let max_a = projs_a.iter().max_by(|a, b| a.total_cmp(b));
+        let min_a = projs_a.iter().min_by(|a, b| a.total_cmp(b));
+        let max_b = projs_b.iter().max_by(|a, b| a.total_cmp(b));
+        let min_b = projs_b.iter().min_by(|a, b| a.total_cmp(b));
 
         !(max_a < min_b || max_b < min_a)
     }

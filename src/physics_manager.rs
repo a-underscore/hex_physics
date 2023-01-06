@@ -24,7 +24,7 @@ impl<'a> System<'a> for PhysicsManager {
                     .filter_map(|e| {
                         world
                             .component_manager
-                            .get_cached_val::<Polygon>(e, &world.entity_manager)
+                            .get_cached_id::<Polygon>(e, &world.entity_manager)
                             .and_then(|p| {
                                 Some((
                                     p,
