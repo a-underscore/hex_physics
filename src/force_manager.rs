@@ -39,7 +39,7 @@ impl<'a> System<'a> for ForceManager {
                         world
                             .component_manager
                             .get_mut::<Transform>(e, &world.entity_manager)
-                            .map(|t| t.set_position(t.position() + p / delta.as_secs_f32()));
+                            .map(|t| t.set_position(t.position() + p * delta.as_secs_f32()));
                     });
             }
         }
