@@ -31,16 +31,18 @@ impl<'a> System<'a> for ForceManager {
             self.frame = now;
 
             for e in world.entity_manager.entities.keys().copied() {
-                world
+                if let Some(velocity) = world
                     .component_manager
                     .get::<Force>(e, &world.entity_manager)
                     .map(|f| f.velocity)
-                    .map(|p| {
-                        world
-                            .component_manager
-                            .get_mut::<Transform>(e, &world.entity_manager)
-                            .map(|t| t.set_position(t.position() + p * delta.as_secs_f32()));
-                    });
+                {
+                    if let Some(t) = world
+                        .component_manager
+                        .get_mut::<Transform>(e, &world.entity_manager)
+                    {
+                        t.set_position(t.position() + velocity * delta.as_secs_f32())
+                    }
+                }
             }
         }
 
