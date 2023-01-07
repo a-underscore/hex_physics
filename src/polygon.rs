@@ -34,8 +34,6 @@ impl Polygon {
         )
     }
 
-    // Adapted from https://github.com/winstxnhdw/2d-separating-axis-theorem
-
     fn normalized_proj_axis(current: Vector2<f32>, next: Vector2<f32>) -> Vector2<f32> {
         Vector2::new(-(next.y - current.y), next.x - current.x).normalize()
     }
@@ -106,8 +104,6 @@ impl Polygon {
 
         true
     }
-
-    // End adapted code
 }
 
 impl Component for Polygon {
