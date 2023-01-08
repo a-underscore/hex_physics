@@ -5,14 +5,16 @@ pub struct Momentum {
     pub mass: f32,
     pub velocity: Vector2<f32>,
     pub applied: Vec<usize>,
+    pub active: bool,
 }
 
 impl Momentum {
-    pub fn new(mass: f32, velocity: Vector2<f32>) -> Self {
+    pub fn new(mass: f32, velocity: Vector2<f32>, active: bool) -> Self {
         Self {
             mass,
             velocity,
             applied: Vec::new(),
+            active,
         }
     }
 

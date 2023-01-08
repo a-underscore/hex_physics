@@ -35,6 +35,7 @@ impl<'a> System<'a> for ForceManager {
                 if let Some(velocity) = world
                     .component_manager
                     .get_mut::<Momentum>(e, &world.entity_manager)
+                    .and_then(|m| m.active.then_some(m))
                     .map(|m| {
                         let applied_m = m.applied.clone();
 
@@ -49,7 +50,8 @@ impl<'a> System<'a> for ForceManager {
                             .filter_map(|m| {
                                 let m = world
                                     .component_manager
-                                    .get::<Momentum>(m, &world.entity_manager)?;
+                                    .get::<Momentum>(m, &world.entity_manager)
+                                    .and_then(|m| m.active.then_some(m))?;
                                 let m = (Into::<Vector2<f32>>::into(m.clone()) + momentum)
                                     / (m.mass + mass);
 
