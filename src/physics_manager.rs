@@ -11,11 +11,11 @@ use hex::{
 };
 use std::time::Instant;
 
-pub struct PhysicsManager {
+pub struct MomentumManager {
     frame: Instant,
 }
 
-impl Default for PhysicsManager {
+impl Default for MomentumManager {
     fn default() -> Self {
         Self {
             frame: Instant::now(),
@@ -23,7 +23,7 @@ impl Default for PhysicsManager {
     }
 }
 
-impl<'a> System<'a> for PhysicsManager {
+impl<'a> System<'a> for MomentumManager {
     fn update(&mut self, ev: &mut Ev, world: &mut World) -> anyhow::Result<()> {
         if let Ev::Event(Event::MainEventsCleared) = ev {
             let now = Instant::now();
@@ -40,25 +40,29 @@ impl<'a> System<'a> for PhysicsManager {
 
                         m.applied.clear();
 
-                        (Into::<Vector2<f32>>::into(m.clone()), applied_m)
+                        (m.clone(), m.mass, applied_m)
                     })
-                    .map(|(mut m, applied_m)| {
-                        for e in applied_m {
-                            if let Some(m2) = world
-                                .component_manager
-                                .get::<Momentum>(e, &world.entity_manager)
-                            {
-                                m += m2.clone().into();
-                            }
-                        }
+                    .map(|(momentum, mass, applied_m)| {
+                        let momentum: Vector2<f32> = momentum.into();
+                        let total: Vector2<f32> = applied_m
+                            .into_iter()
+                            .filter_map(|m| {
+                                let m = world
+                                    .component_manager
+                                    .get::<Momentum>(m, &world.entity_manager)?;
+                                let m = (Into::<Vector2<f32>>::into(m.clone()) + momentum)
+                                    / (m.mass + mass);
 
-                        m
+                                Some(m)
+                            })
+                            .sum::<Vector2<f32>>();
+
+                        total
                     })
                 {
                     if let Some(t) = world
                         .component_manager
                         .get_mut::<Transform>(e, &world.entity_manager)
-                        .and_then(|t| t.active.then_some(t))
                     {
                         t.set_position(t.position() + velocity * delta.as_secs_f32())
                     }
