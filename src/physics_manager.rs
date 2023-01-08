@@ -40,9 +40,9 @@ impl<'a> System<'a> for PhysicsManager {
 
                         m.applied.clear();
 
-                        (m.clone(), m.mass, applied_m)
+                        (m.clone(), m.mass, m.velocity, applied_m)
                     })
-                    .map(|(momentum, mass, applied_m)| {
+                    .map(|(momentum, mass, vel, applied_m)| {
                         let momentum: Vector2<f32> = momentum.into();
                         let total: Vector2<f32> = applied_m
                             .into_iter()
@@ -55,7 +55,8 @@ impl<'a> System<'a> for PhysicsManager {
 
                                 Some(m)
                             })
-                            .sum::<Vector2<f32>>();
+                            .sum::<Vector2<f32>>()
+                            + vel;
 
                         total
                     })

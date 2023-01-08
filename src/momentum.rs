@@ -18,7 +18,7 @@ impl Momentum {
         }
     }
 
-    pub fn apply_force(&mut self, other: usize) {
+    pub fn apply(&mut self, other: usize) {
         self.applied.push(other);
     }
 }
