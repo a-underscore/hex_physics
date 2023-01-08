@@ -63,6 +63,7 @@ impl<'a> System<'a> for ForceManager {
                     if let Some(t) = world
                         .component_manager
                         .get_mut::<Transform>(e, &world.entity_manager)
+                        .and_then(|t| t.active.then_some(t))
                     {
                         t.set_position(t.position() + velocity * delta.as_secs_f32())
                     }
