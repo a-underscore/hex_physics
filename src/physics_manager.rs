@@ -11,11 +11,11 @@ use hex::{
 };
 use std::time::Instant;
 
-pub struct MomentumManager {
+pub struct PhysicsManager {
     frame: Instant,
 }
 
-impl Default for MomentumManager {
+impl Default for PhysicsManager {
     fn default() -> Self {
         Self {
             frame: Instant::now(),
@@ -23,7 +23,7 @@ impl Default for MomentumManager {
     }
 }
 
-impl<'a> System<'a> for MomentumManager {
+impl<'a> System<'a> for PhysicsManager {
     fn update(&mut self, ev: &mut Ev, world: &mut World) -> anyhow::Result<()> {
         if let Ev::Event(Event::MainEventsCleared) = ev {
             let now = Instant::now();
