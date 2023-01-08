@@ -5,6 +5,7 @@ use hex::{
     ecs::component_manager::Component,
 };
 
+#[derive(Clone)]
 pub struct Polygon {
     pub points: Vec<Vector2<f32>>,
     pub collisions: Vec<usize>,

@@ -1,6 +1,7 @@
-use crate::force::Force;
+use crate::momentum::Momentum;
 use hex::{
     anyhow,
+    cgmath::Vector2,
     components::Transform,
     ecs::{
         system_manager::{Ev, System},
@@ -33,8 +34,26 @@ impl<'a> System<'a> for ForceManager {
             for e in world.entity_manager.entities.keys().copied() {
                 if let Some(velocity) = world
                     .component_manager
-                    .get::<Force>(e, &world.entity_manager)
-                    .map(|f| f.velocity)
+                    .get_mut::<Momentum>(e, &world.entity_manager)
+                    .map(|m| {
+                        let applied_m = m.applied.clone();
+
+                        m.applied.clear();
+
+                        (Into::<Vector2<f32>>::into(m.clone()), applied_m)
+                    })
+                    .map(|(mut m, applied_m)| {
+                        for e in applied_m {
+                            if let Some(m2) = world
+                                .component_manager
+                                .get::<Momentum>(e, &world.entity_manager)
+                            {
+                                m += m2.clone().into();
+                            }
+                        }
+
+                        m
+                    })
                 {
                     if let Some(t) = world
                         .component_manager
