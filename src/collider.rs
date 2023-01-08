@@ -6,13 +6,13 @@ use hex::{
 };
 
 #[derive(Clone)]
-pub struct Polygon {
+pub struct Collider {
     pub points: Vec<Vector2<f32>>,
     pub collisions: Vec<usize>,
     pub active: bool,
 }
 
-impl Polygon {
+impl Collider {
     pub fn new(points: Vec<Vector2<f32>>, active: bool) -> Self {
         Self {
             points,
@@ -107,7 +107,7 @@ impl Polygon {
     }
 }
 
-impl Component for Polygon {
+impl Component for Collider {
     fn id() -> usize {
         cid!()
     }

@@ -1,4 +1,4 @@
-use crate::polygon::Polygon;
+use crate::collider::Collider;
 use hex::{
     anyhow,
     components::Transform,
@@ -24,14 +24,14 @@ impl<'a> System<'a> for CollisionManager {
                     .filter_map(|e| {
                         world
                             .component_manager
-                            .get_cached_id::<Polygon>(e, &world.entity_manager)
+                            .get_cached_id::<Collider>(e, &world.entity_manager)
                             .and_then(|p| {
                                 Some((
                                     p,
                                     e,
                                     world
                                         .component_manager
-                                        .get_cached::<Polygon>(p)
+                                        .get_cached::<Collider>(p)
                                         .and_then(|p| p.active.then_some(p))?,
                                     world
                                         .component_manager
@@ -59,11 +59,11 @@ impl<'a> System<'a> for CollisionManager {
             };
 
             for ((ac, ae), (bc, be)) in collisions {
-                if let Some(p) = world.component_manager.get_cached_mut::<Polygon>(ac) {
+                if let Some(p) = world.component_manager.get_cached_mut::<Collider>(ac) {
                     p.collisions.push(be);
                 }
 
-                if let Some(p) = world.component_manager.get_cached_mut::<Polygon>(bc) {
+                if let Some(p) = world.component_manager.get_cached_mut::<Collider>(bc) {
                     p.collisions.push(ae);
                 }
             }
