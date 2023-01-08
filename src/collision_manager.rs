@@ -1,7 +1,6 @@
-use crate::momentum::Momentum;
+use crate::polygon::Polygon;
 use hex::{
     anyhow,
-    cgmath::Vector2,
     components::Transform,
     ecs::{
         system_manager::{Ev, System},
@@ -9,59 +8,63 @@ use hex::{
     },
     glium::glutin::event::Event,
 };
-use std::time::Instant;
 
-pub struct ForceManager {
-    frame: Instant,
-}
+#[derive(Default)]
+pub struct CollisionManager;
 
-impl Default for ForceManager {
-    fn default() -> Self {
-        Self {
-            frame: Instant::now(),
-        }
-    }
-}
-
-impl<'a> System<'a> for ForceManager {
+impl<'a> System<'a> for CollisionManager {
     fn update(&mut self, ev: &mut Ev, world: &mut World) -> anyhow::Result<()> {
         if let Ev::Event(Event::MainEventsCleared) = ev {
-            let now = Instant::now();
-            let delta = now.duration_since(self.frame);
-
-            self.frame = now;
-
-            for e in world.entity_manager.entities.keys().copied() {
-                if let Some(velocity) = world
-                    .component_manager
-                    .get_mut::<Momentum>(e, &world.entity_manager)
-                    .map(|m| {
-                        let applied_m = m.applied.clone();
-
-                        m.applied.clear();
-
-                        (Into::<Vector2<f32>>::into(m.clone()), applied_m)
+            let collisions = {
+                let mut objects: Vec<_> = world
+                    .entity_manager
+                    .entities
+                    .keys()
+                    .copied()
+                    .filter_map(|e| {
+                        world
+                            .component_manager
+                            .get_cached_id::<Polygon>(e, &world.entity_manager)
+                            .and_then(|p| {
+                                Some((
+                                    p,
+                                    e,
+                                    world
+                                        .component_manager
+                                        .get_cached::<Polygon>(p)
+                                        .and_then(|p| p.active.then_some(p))?,
+                                    world
+                                        .component_manager
+                                        .get::<Transform>(e, &world.entity_manager)
+                                        .and_then(|t| t.active.then_some(t))?,
+                                ))
+                            })
                     })
-                    .map(|(mut m, applied_m)| {
-                        for e in applied_m {
-                            if let Some(m2) = world
-                                .component_manager
-                                .get::<Momentum>(e, &world.entity_manager)
-                            {
-                                m += m2.clone().into();
-                            }
+                    .collect();
+
+                let mut collisions = Vec::new();
+
+                while let Some((ac, ae, a, at)) = objects.pop() {
+                    for (bc, be, b, bt) in &objects {
+                        if a.intersecting(at, b, bt) {
+                            let a = (ac, ae);
+                            let b = (*bc, *be);
+
+                            collisions.extend([(a, b), (b, a)]);
                         }
-
-                        m
-                    })
-                {
-                    if let Some(t) = world
-                        .component_manager
-                        .get_mut::<Transform>(e, &world.entity_manager)
-                        .and_then(|t| t.active.then_some(t))
-                    {
-                        t.set_position(t.position() + velocity * delta.as_secs_f32())
                     }
+                }
+
+                collisions
+            };
+
+            for ((ac, ae), (bc, be)) in collisions {
+                if let Some(p) = world.component_manager.get_cached_mut::<Polygon>(ac) {
+                    p.collisions.push(be);
+                }
+
+                if let Some(p) = world.component_manager.get_cached_mut::<Polygon>(bc) {
+                    p.collisions.push(ae);
                 }
             }
         }

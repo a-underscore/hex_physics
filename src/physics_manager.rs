@@ -11,11 +11,11 @@ use hex::{
 };
 use std::time::Instant;
 
-pub struct ForceManager {
+pub struct PhysicsManager {
     frame: Instant,
 }
 
-impl Default for ForceManager {
+impl Default for PhysicsManager {
     fn default() -> Self {
         Self {
             frame: Instant::now(),
@@ -23,7 +23,7 @@ impl Default for ForceManager {
     }
 }
 
-impl<'a> System<'a> for ForceManager {
+impl<'a> System<'a> for PhysicsManager {
     fn update(&mut self, ev: &mut Ev, world: &mut World) -> anyhow::Result<()> {
         if let Ev::Event(Event::MainEventsCleared) = ev {
             let now = Instant::now();
@@ -35,31 +35,24 @@ impl<'a> System<'a> for ForceManager {
                 if let Some(velocity) = world
                     .component_manager
                     .get_mut::<Momentum>(e, &world.entity_manager)
-                    .and_then(|m| m.active.then_some(m))
                     .map(|m| {
                         let applied_m = m.applied.clone();
 
                         m.applied.clear();
 
-                        (m.clone(), m.mass, applied_m)
+                        (Into::<Vector2<f32>>::into(m.clone()), applied_m)
                     })
-                    .map(|(momentum, mass, applied_m)| {
-                        let momentum: Vector2<f32> = momentum.into();
-                        let total: Vector2<f32> = applied_m
-                            .into_iter()
-                            .filter_map(|m| {
-                                let m = world
-                                    .component_manager
-                                    .get::<Momentum>(m, &world.entity_manager)
-                                    .and_then(|m| m.active.then_some(m))?;
-                                let m = (Into::<Vector2<f32>>::into(m.clone()) + momentum)
-                                    / (m.mass + mass);
+                    .map(|(mut m, applied_m)| {
+                        for e in applied_m {
+                            if let Some(m2) = world
+                                .component_manager
+                                .get::<Momentum>(e, &world.entity_manager)
+                            {
+                                m += m2.clone().into();
+                            }
+                        }
 
-                                Some(m)
-                            })
-                            .sum::<Vector2<f32>>();
-
-                        total
+                        m
                     })
                 {
                     if let Some(t) = world
