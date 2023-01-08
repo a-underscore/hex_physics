@@ -21,9 +21,9 @@ impl Momentum {
     }
 }
 
-impl Into<Vector2<f32>> for Momentum {
-    fn into(self) -> Vector2<f32> {
-        self.velocity * self.mass
+impl From<Momentum> for Vector2<f32> {
+    fn from(val: Momentum) -> Self {
+        val.velocity * val.mass
     }
 }
 

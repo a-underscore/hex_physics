@@ -42,7 +42,7 @@ impl<'a> System<'a> for ForceManager {
 
                         (m.clone(), m.mass, applied_m)
                     })
-                    .and_then(|(momentum, mass, applied_m)| {
+                    .map(|(momentum, mass, applied_m)| {
                         let momentum: Vector2<f32> = momentum.into();
                         let total: Vector2<f32> = applied_m
                             .into_iter()
@@ -57,7 +57,7 @@ impl<'a> System<'a> for ForceManager {
                             })
                             .sum::<Vector2<f32>>();
 
-                        Some(total)
+                        total
                     })
                 {
                     if let Some(t) = world
