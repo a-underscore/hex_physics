@@ -1,4 +1,4 @@
-use crate::momentum::Momentum;
+use crate::physical::Physical;
 use hex::{
     anyhow,
     cgmath::Vector2,
@@ -34,31 +34,13 @@ impl<'a> System<'a> for PhysicsManager {
             for e in world.entity_manager.entities.keys().copied() {
                 if let Some(velocity) = world
                     .component_manager
-                    .get_mut::<Momentum>(e, &world.entity_manager)
-                    .map(|m| {
-                        let applied_m = m.applied.clone();
+                    .get_mut::<Physical>(e, &world.entity_manager)
+                    .map(|p| {
+                        let applied = p.applied.clone();
 
-                        m.applied.clear();
+                        p.applied.clear();
 
-                        (m.clone(), m.mass, m.velocity, applied_m)
-                    })
-                    .map(|(momentum, mass, vel, applied_m)| {
-                        let momentum: Vector2<f32> = momentum.into();
-                        let total: Vector2<f32> = applied_m
-                            .into_iter()
-                            .filter_map(|m| {
-                                let m = world
-                                    .component_manager
-                                    .get::<Momentum>(m, &world.entity_manager)?;
-                                let m = (Into::<Vector2<f32>>::into(m.clone()) + momentum)
-                                    / (m.mass + mass);
-
-                                Some(m)
-                            })
-                            .sum::<Vector2<f32>>()
-                            + vel;
-
-                        total
+                        p.velocity + applied.into_iter().sum::<Vector2<f32>>()
                     })
                 {
                     if let Some(t) = world
