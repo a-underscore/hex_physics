@@ -1,4 +1,9 @@
-use hex::{cgmath::Vector2, cid, components::Transform, ecs::component_manager::Component};
+use hex::{
+    cgmath::{InnerSpace, Vector2},
+    cid,
+    components::Transform,
+    ecs::component_manager::Component,
+};
 
 #[derive(Clone)]
 pub struct Collider {
@@ -25,6 +30,24 @@ impl Collider {
                 Vector2::new(-dims.x, dims.y),
                 Vector2::new(dims.x, dims.y),
                 Vector2::new(dims.x, -dims.y),
+            ],
+            active,
+        )
+    }
+
+    pub fn oct(dims: Vector2<f32>, active: bool) -> Self {
+        let dims1 = dims / 2.0;
+        let dims2 = Vector2::from([dims.magnitude(); 2]);
+
+        Self::new(
+            vec![
+                Vector2::new(-dims1.x, -dims1.y),
+                Vector2::new(-dims2.x, 0.0),
+                Vector2::new(-dims1.x, dims1.y),
+                Vector2::new(0.0, dims2.y),
+                Vector2::new(dims1.x, dims1.y),
+                Vector2::new(dims2.x, 0.0),
+                Vector2::new(dims1.x, -dims1.y),
             ],
             active,
         )
