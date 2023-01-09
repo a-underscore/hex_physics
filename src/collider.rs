@@ -28,77 +28,65 @@ impl Collider {
             vec![
                 Vector2::new(-dims.x, -dims.y),
                 Vector2::new(-dims.x, dims.y),
-                Vector2::new(dims.x, -dims.y),
                 Vector2::new(dims.x, dims.y),
+                Vector2::new(dims.x, -dims.y),
             ],
             active,
         )
     }
 
-    fn normalized_proj_axis(current: Vector2<f32>, next: Vector2<f32>) -> Vector2<f32> {
-        Vector2::new(-(next.y - current.y), next.x - current.x).normalize()
-    }
-
-    fn projs(
-        a_points: &[Vector2<f32>],
-        b_points: &[Vector2<f32>],
-        axis_normalized: Vector2<f32>,
-    ) -> (Vec<f32>, Vec<f32>) {
-        let mut a_projs = Vec::new();
-        let mut b_projs = Vec::new();
-
-        for (a, b) in a_points.iter().zip(b_points.iter()) {
-            let a_proj = axis_normalized.dot(*a);
-            let b_proj = axis_normalized.dot(*b);
-
-            a_projs.push(a_proj);
-            b_projs.push(b_proj);
-        }
-
-        (a_projs, b_projs)
-    }
-
-    fn overlapping(projs_a: Vec<f32>, projs_b: Vec<f32>) -> bool {
-        let max_a = projs_a.iter().max_by(|a, b| a.total_cmp(b));
-        let min_a = projs_a.iter().min_by(|a, b| a.total_cmp(b));
-        let max_b = projs_b.iter().max_by(|a, b| a.total_cmp(b));
-        let min_b = projs_b.iter().min_by(|a, b| a.total_cmp(b));
-
-        !(max_a < min_b || max_b < min_a)
-    }
 
     pub fn intersecting(&self, transform: &Transform, b: &Self, b_transform: &Transform) -> bool {
-        let a_bounds = self
+        let a_points = self
             .points
             .iter()
             .cloned()
             .map(|p| (transform.matrix() * p.extend(1.0)).truncate())
             .collect::<Vec<_>>();
-        let b_bounds = b
+        let b_points = b
             .points
             .iter()
             .cloned()
             .map(|p| (b_transform.matrix() * p.extend(1.0)).truncate())
             .collect::<Vec<_>>();
 
-        for i in 0..a_bounds.len() {
-            let current = a_bounds[i];
-            let next = a_bounds[(i + 1) % a_bounds.len()];
-            let axis = Self::normalized_proj_axis(current, next);
-            let (a_projs, b_projs) = Self::projs(&a_bounds, &b_bounds, axis);
+        for i in 0..a_points.len() {
+            let p1 = a_points[i];
+            let p2 = a_points[(i + 1) % a_points.len()];
 
-            if !Self::overlapping(a_projs, b_projs) {
-                return false;
+            let normal = Vector2::new(p2.y - p1.y, p1.x - p2.x);
+
+            let mut a_min = None;
+            let mut a_max = None;
+
+            for p in &a_points {
+                let projected = normal.x * p.x + normal.y * p.y;
+
+                if a_min.map(|a| projected < a).unwrap_or(true) {
+                    a_min = Some(projected);
+                }
+
+                if a_max.map(|a| projected > a).unwrap_or(true) {
+                    a_max = Some(projected);
+                }
             }
-        }
 
-        for i in 0..b_bounds.len() {
-            let current = b_bounds[i];
-            let next = b_bounds[(i + 1) % a_bounds.len()];
-            let axis = Self::normalized_proj_axis(current, next);
-            let (a_projs, b_projs) = Self::projs(&a_bounds, &b_bounds, axis);
+            let mut b_min = None;
+            let mut b_max = None;
 
-            if !Self::overlapping(a_projs, b_projs) {
+            for p in &b_points {
+                let projected = normal.x * p.x + normal.y * p.y;
+
+                if b_min.map(|b| projected < b).unwrap_or(true) {
+                    b_min = Some(projected);
+                }
+
+                if b_max.map(|b| projected > b).unwrap_or(true) {
+                    b_max = Some(projected);
+                }
+            }
+
+            if a_max.and_then(|a| b_min.map(|b| a < b)).unwrap_or(true) || b_max.and_then(|b| a_min.map(|a| b < a)).unwrap_or(true) {
                 return false;
             }
         }
