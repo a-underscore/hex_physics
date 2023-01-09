@@ -1,9 +1,4 @@
-use hex::{
-    cgmath::{InnerSpace, Vector2},
-    cid,
-    components::Transform,
-    ecs::component_manager::Component,
-};
+use hex::{cgmath::Vector2, cid, components::Transform, ecs::component_manager::Component};
 
 #[derive(Clone)]
 pub struct Collider {
@@ -34,7 +29,6 @@ impl Collider {
             active,
         )
     }
-
 
     pub fn intersecting(&self, transform: &Transform, b: &Self, b_transform: &Transform) -> bool {
         let a_points = self
@@ -86,7 +80,9 @@ impl Collider {
                 }
             }
 
-            if a_max.and_then(|a| b_min.map(|b| a < b)).unwrap_or(true) || b_max.and_then(|b| a_min.map(|a| b < a)).unwrap_or(true) {
+            if a_max.and_then(|a| b_min.map(|b| a < b)).unwrap_or(true)
+                || b_max.and_then(|b| a_min.map(|a| b < a)).unwrap_or(true)
+            {
                 return false;
             }
         }
