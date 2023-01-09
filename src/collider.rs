@@ -48,6 +48,7 @@ impl Collider {
                 Vector2::new(dims1.x, dims1.y),
                 Vector2::new(dims2.x, 0.0),
                 Vector2::new(dims1.x, -dims1.y),
+                Vector2::new(0.0, -dims2.y),
             ],
             active,
         )
