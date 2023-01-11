@@ -8,7 +8,7 @@ use hex::{
 #[derive(Clone)]
 pub struct Collider {
     pub points: Vec<Vector2<f32>>,
-    pub collisions: Vec<(usize, f32)>,
+    pub collisions: Vec<(usize, Vector2<f32>)>,
     pub active: bool,
 }
 

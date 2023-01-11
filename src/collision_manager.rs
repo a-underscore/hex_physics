@@ -1,6 +1,7 @@
 use crate::collider::Collider;
 use hex::{
     anyhow,
+    cgmath::InnerSpace,
     components::Transform,
     ecs::{
         system_manager::{Ev, System},
@@ -50,7 +51,9 @@ impl<'a> System<'a> for CollisionManager {
                             let a = (ac, ae);
                             let b = (*bc, *be);
 
-                            collisions.extend([(v, a, b), (v, b, a)]);
+                            let min_translation = (bt.position() - at.position()).normalize() * v;
+
+                            collisions.extend([(min_translation, a, b), (-min_translation, b, a)]);
                         }
                     }
                 }
@@ -58,13 +61,13 @@ impl<'a> System<'a> for CollisionManager {
                 collisions
             };
 
-            for (v, (ac, ae), (bc, be)) in collisions {
+            for (t, (ac, ae), (bc, be)) in collisions {
                 if let Some(p) = world.component_manager.get_cached_mut::<Collider>(ac) {
-                    p.collisions.push((be, v));
+                    p.collisions.push((be, t));
                 }
 
                 if let Some(p) = world.component_manager.get_cached_mut::<Collider>(bc) {
-                    p.collisions.push((ae, v));
+                    p.collisions.push((ae, t));
                 }
             }
         }
