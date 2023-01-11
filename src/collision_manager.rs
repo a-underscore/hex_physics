@@ -46,11 +46,11 @@ impl<'a> System<'a> for CollisionManager {
 
                 while let Some((ac, ae, a, at)) = objects.pop() {
                     for (bc, be, b, bt) in &objects {
-                        if a.intersecting(at, b, bt) {
+                        if let Some(v) = a.intersecting(at, b, bt) {
                             let a = (ac, ae);
                             let b = (*bc, *be);
 
-                            collisions.extend([(a, b), (b, a)]);
+                            collisions.extend([(v, a, b), (v, b, a)]);
                         }
                     }
                 }
@@ -58,13 +58,13 @@ impl<'a> System<'a> for CollisionManager {
                 collisions
             };
 
-            for ((ac, ae), (bc, be)) in collisions {
+            for (v, (ac, ae), (bc, be)) in collisions {
                 if let Some(p) = world.component_manager.get_cached_mut::<Collider>(ac) {
-                    p.collisions.push(be);
+                    p.collisions.push((be, v));
                 }
 
                 if let Some(p) = world.component_manager.get_cached_mut::<Collider>(bc) {
-                    p.collisions.push(ae);
+                    p.collisions.push((ae, v));
                 }
             }
         }

@@ -8,7 +8,7 @@ use hex::{
 #[derive(Clone)]
 pub struct Collider {
     pub points: Vec<Vector2<f32>>,
-    pub collisions: Vec<usize>,
+    pub collisions: Vec<(usize, f32)>,
     pub active: bool,
 }
 
@@ -37,7 +37,7 @@ impl Collider {
 
     pub fn oct(dims: Vector2<f32>, active: bool) -> Self {
         let dims1 = dims / 2.0;
-        let dims2 = Vector2::from([dims.magnitude(); 2]);
+        let dims2 = Vector2::from([dims1.magnitude(); 2]);
 
         Self::new(
             vec![
@@ -54,7 +54,12 @@ impl Collider {
         )
     }
 
-    pub fn intersecting(&self, transform: &Transform, b: &Self, b_transform: &Transform) -> bool {
+    pub fn intersecting(
+        &self,
+        transform: &Transform,
+        b: &Self,
+        b_transform: &Transform,
+    ) -> Option<f32> {
         let a_points = self
             .points
             .iter()
@@ -67,6 +72,8 @@ impl Collider {
             .cloned()
             .map(|p| (b_transform.matrix() * p.extend(1.0)).truncate())
             .collect::<Vec<_>>();
+
+        let mut min = None;
 
         for i in 0..a_points.len() {
             let p1 = a_points[i];
@@ -104,14 +111,24 @@ impl Collider {
                 }
             }
 
-            if a_max.and_then(|a| b_min.map(|b| a < b)).unwrap_or(true)
-                || b_max.and_then(|b| a_min.map(|a| b < a)).unwrap_or(true)
+            if let (Some(a_min), Some(a_max), Some(b_min), Some(b_max)) =
+                (a_min, a_max, b_min, b_max)
             {
-                return false;
+                if !(a_max < b_min || b_max < a_min) {
+                    let m = (a_max - b_min).min(b_max - b_min);
+
+                    if min.map(|min| m < min).unwrap_or(true) {
+                        min = Some(m);
+                    }
+
+                    continue;
+                }
             }
+
+            return None;
         }
 
-        true
+        min
     }
 }
 
