@@ -11,7 +11,7 @@ use hex::{
 };
 use std::time::Instant;
 
-pub const MAX_DELTA: f32 = 1.0;
+pub const MAX_DELTA: f32 = 0.1;
 
 pub struct PhysicsManager {
     frame: Instant,
