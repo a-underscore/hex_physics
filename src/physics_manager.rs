@@ -11,6 +11,8 @@ use hex::{
 };
 use std::time::Instant;
 
+pub const MAX_DELTA: f32 = 1.0;
+
 pub struct PhysicsManager {
     frame: Instant,
 }
@@ -47,7 +49,7 @@ impl<'a> System<'a> for PhysicsManager {
                         .component_manager
                         .get_mut::<Transform>(e, &world.entity_manager)
                     {
-                        t.set_position(t.position() + velocity * delta.as_secs_f32())
+                        t.set_position(t.position() + velocity * delta.as_secs_f32().min(MAX_DELTA))
                     }
                 }
             }
