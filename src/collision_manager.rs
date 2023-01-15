@@ -18,25 +18,25 @@ impl<'a> System<'a> for CollisionManager {
         if let Ev::Event(Event::MainEventsCleared) = ev {
             let collisions = {
                 let mut objects: Vec<_> = world
-                    .entity_manager
+                    .em
                     .entities
                     .keys()
                     .copied()
                     .filter_map(|e| {
                         world
-                            .component_manager
-                            .get_cached_id::<Collider>(e, &world.entity_manager)
+                            .cm
+                            .get_cached_id::<Collider>(e, &world.em)
                             .and_then(|p| {
                                 Some((
                                     p,
                                     e,
                                     world
-                                        .component_manager
+                                        .cm
                                         .get_cached::<Collider>(p)
                                         .and_then(|p| p.active.then_some(p))?,
                                     world
-                                        .component_manager
-                                        .get::<Transform>(e, &world.entity_manager)
+                                        .cm
+                                        .get::<Transform>(e, &world.em)
                                         .and_then(|t| t.active.then_some(t))?,
                                 ))
                             })
@@ -62,11 +62,11 @@ impl<'a> System<'a> for CollisionManager {
             };
 
             for (t, (ac, ae), (bc, be)) in collisions {
-                if let Some(p) = world.component_manager.get_cached_mut::<Collider>(ac) {
+                if let Some(p) = world.cm.get_cached_mut::<Collider>(ac) {
                     p.collisions.push((be, t));
                 }
 
-                if let Some(p) = world.component_manager.get_cached_mut::<Collider>(bc) {
+                if let Some(p) = world.cm.get_cached_mut::<Collider>(bc) {
                     p.collisions.push((ae, t));
                 }
             }
