@@ -10,7 +10,7 @@ use hex::{
 };
 use std::time::Instant;
 
-pub const MAX_DELTA: f32 = 0.01;
+pub const MAX_DELTA: f32 = 0.1;
 
 pub struct PhysicsManager {
     pub max_delta: f32,
