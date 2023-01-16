@@ -10,15 +10,26 @@ use hex::{
 };
 use std::time::Instant;
 
-pub const MAX_DELTA: f32 = 0.1;
+pub const MAX_DELTA: f32 = 0.01;
 
 pub struct PhysicsManager {
+    pub max_delta: f32,
     frame: Instant,
+}
+
+impl PhysicsManager {
+    pub fn new(max_delta: f32) -> Self {
+        Self {
+            max_delta,
+            ..Default::default()
+        }
+    }
 }
 
 impl Default for PhysicsManager {
     fn default() -> Self {
         Self {
+            max_delta: MAX_DELTA,
             frame: Instant::now(),
         }
     }
@@ -39,7 +50,9 @@ impl<'a> System<'a> for PhysicsManager {
                     .map(|p| p.velocity)
                 {
                     if let Some(t) = world.cm.get_mut::<Transform>(e, &world.em) {
-                        t.set_position(t.position() + velocity * delta.as_secs_f32().min(MAX_DELTA))
+                        t.set_position(
+                            t.position() + velocity * delta.as_secs_f32().min(self.max_delta),
+                        )
                     }
                 }
             }
