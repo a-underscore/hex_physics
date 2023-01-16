@@ -1,4 +1,4 @@
-use crate::collider::Collider;
+use crate::{collider::Collider, physical::Physical};
 use hex::{
     anyhow,
     cgmath::InnerSpace,
@@ -50,10 +50,16 @@ impl<'a> System<'a> for CollisionManager {
                         if let Some(v) = a.intersecting(at, b, bt) {
                             let a = (ac, ae);
                             let b = (*bc, *be);
-
                             let min_translation = (bt.position() - at.position()).normalize() * v;
+                            let amount = [ae, *be]
+                                .into_iter()
+                                .filter_map(|e| world.cm.get::<Physical>(e, &world.em))
+                                .count() as f32;
 
-                            collisions.extend([(min_translation, a, b), (-min_translation, b, a)]);
+                            if amount > 0.0 {
+                                collisions
+                                    .extend([(min_translation, a, b), (-min_translation, b, a)]);
+                            }
                         }
                     }
                 }
