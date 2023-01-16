@@ -47,7 +47,7 @@ impl<'a> System<'a> for PhysicsManager {
                 if let Some(velocity) = world
                     .cm
                     .get_mut::<Physical>(e, &world.em)
-                    .map(|p| p.velocity)
+                    .and_then(|p| p.active.then_some(p.velocity))
                 {
                     if let Some(t) = world.cm.get_mut::<Transform>(e, &world.em) {
                         t.set_position(
