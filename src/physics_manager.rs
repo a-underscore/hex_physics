@@ -1,7 +1,6 @@
 use crate::physical::Physical;
 use hex::{
     anyhow,
-    cgmath::Vector2,
     components::Transform,
     ecs::{
         system_manager::{Ev, System},
@@ -34,13 +33,11 @@ impl<'a> System<'a> for PhysicsManager {
             self.frame = now;
 
             for e in world.em.entities.keys().copied() {
-                if let Some(velocity) = world.cm.get_mut::<Physical>(e, &world.em).map(|p| {
-                    let applied = p.applied.clone();
-
-                    p.applied.clear();
-
-                    p.velocity + applied.into_iter().sum::<Vector2<f32>>()
-                }) {
+                if let Some(velocity) = world
+                    .cm
+                    .get_mut::<Physical>(e, &world.em)
+                    .map(|p| p.velocity)
+                {
                     if let Some(t) = world.cm.get_mut::<Transform>(e, &world.em) {
                         t.set_position(t.position() + velocity * delta.as_secs_f32().min(MAX_DELTA))
                     }
