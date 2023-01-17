@@ -8,17 +8,12 @@ use hex::{
 #[derive(Clone)]
 pub struct Collider {
     pub points: Vec<Vector2<f32>>,
-    pub collisions: Vec<(usize, Vector2<f32>)>,
     pub active: bool,
 }
 
 impl Collider {
     pub fn new(points: Vec<Vector2<f32>>, active: bool) -> Self {
-        Self {
-            points,
-            collisions: Vec::new(),
-            active,
-        }
+        Self { points, active }
     }
 
     pub fn rect(dims: Vector2<f32>, active: bool) -> Self {

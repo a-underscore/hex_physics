@@ -25,19 +25,19 @@ impl<'a> System<'a> for CollisionManager {
                     .filter_map(|e| {
                         world
                             .cm
-                            .get_cached_id::<Collider>(e, &world.em)
+                            .get_cached_id::<Transform>(e, &world.em)
                             .and_then(|p| {
                                 Some((
                                     p,
                                     e,
                                     world
                                         .cm
-                                        .get_cached::<Collider>(p)
-                                        .and_then(|p| p.active.then_some(p))?,
+                                        .get::<Collider>(e, &world.em)
+                                        .and_then(|t| t.active.then_some(t))?,
                                     world
                                         .cm
-                                        .get::<Transform>(e, &world.em)
-                                        .and_then(|t| t.active.then_some(t))?,
+                                        .get_cached::<Transform>(p)
+                                        .and_then(|p| p.active.then_some(p))?,
                                 ))
                             })
                     })
@@ -51,14 +51,13 @@ impl<'a> System<'a> for CollisionManager {
                             let a = (ac, ae);
                             let b = (*bc, *be);
                             let min_translation = (bt.position() - at.position()).normalize() * v;
-                            let amount = [ae, *be]
-                                .into_iter()
-                                .filter_map(|e| world.cm.get::<Physical>(e, &world.em))
-                                .count() as f32;
 
-                            if amount > 0.0 {
-                                collisions
-                                    .extend([(min_translation, a, b), (-min_translation, b, a)]);
+                            if world.cm.get::<Physical>(ae, &world.em).is_some() {
+                                collisions.push((-min_translation, a));
+                            }
+
+                            if world.cm.get::<Physical>(*be, &world.em).is_some() {
+                                collisions.push((min_translation, b));
                             }
                         }
                     }
@@ -67,13 +66,9 @@ impl<'a> System<'a> for CollisionManager {
                 collisions
             };
 
-            for (t, (ac, ae), (bc, be)) in collisions {
-                if let Some(p) = world.cm.get_cached_mut::<Collider>(ac) {
-                    p.collisions.push((be, t));
-                }
-
-                if let Some(p) = world.cm.get_cached_mut::<Collider>(bc) {
-                    p.collisions.push((ae, t));
+            for (t, (ac, _)) in collisions {
+                if let Some(p) = world.cm.get_cached_mut::<Transform>(ac) {
+                    p.set_position(p.position() + t);
                 }
             }
         }
