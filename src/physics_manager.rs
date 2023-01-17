@@ -8,16 +8,18 @@ use hex::{
     },
     glium::glutin::event::Event,
 };
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 pub struct PhysicsManager {
     frame: Instant,
+    pub max_delta: Duration,
 }
 
-impl Default for PhysicsManager {
-    fn default() -> Self {
+impl PhysicsManager {
+    pub fn new(max_delta: Duration) -> Self {
         Self {
             frame: Instant::now(),
+            max_delta,
         }
     }
 }
@@ -37,7 +39,9 @@ impl<'a> System<'a> for PhysicsManager {
                     .and_then(|p| p.active.then_some(p.velocity))
                 {
                     if let Some(t) = world.cm.get_mut::<Transform>(e, &world.em) {
-                        t.set_position(t.position() + velocity * delta.as_secs_f32())
+                        t.set_position(
+                            t.position() + velocity * (delta.min(self.max_delta)).as_secs_f32(),
+                        )
                     }
                 }
             }
