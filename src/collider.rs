@@ -80,7 +80,7 @@ impl Collider {
             let mut a_max = None;
 
             for p in &a_points {
-                let projected = normal.x * p.x + normal.y * p.y;
+                let projected = normal.dot(*p);
 
                 if a_min.map(|a| projected < a).unwrap_or(true) {
                     a_min = Some(projected);
