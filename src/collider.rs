@@ -110,7 +110,7 @@ impl Collider {
                 (a_min, a_max, b_min, b_max)
             {
                 if !(a_max < b_min || b_max < a_min) {
-                    let m = (a_max - b_min).min(b_max - b_min);
+                    let m = (a_max - b_min).min(b_max - a_min);
 
                     if min.map(|min| m < min).unwrap_or(true) {
                         min = Some(m);
