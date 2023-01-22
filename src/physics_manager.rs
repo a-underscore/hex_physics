@@ -40,7 +40,10 @@ impl<'a> System<'a> for PhysicsManager {
                 {
                     if let Some(t) = world.cm.get_mut::<Transform>(e, &world.em) {
                         t.set_position(
-                            t.position() + velocity * (delta.min(self.max_delta)).as_secs_f32(),
+                            (t.matrix()
+                                * (velocity * (delta.min(self.max_delta)).as_secs_f32())
+                                    .extend(1.0))
+                            .truncate(),
                         )
                     }
                 }
