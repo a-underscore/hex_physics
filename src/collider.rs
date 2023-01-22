@@ -8,20 +8,22 @@ use hex::{
 #[derive(Clone)]
 pub struct Collider {
     pub points: Vec<Vector2<f32>>,
+    pub layers: Vec<usize>,
     pub active: bool,
     pub collisions: Vec<usize>,
 }
 
 impl Collider {
-    pub fn new(points: Vec<Vector2<f32>>, active: bool) -> Self {
+    pub fn new(points: Vec<Vector2<f32>>, layers: Vec<usize>, active: bool) -> Self {
         Self {
             points,
             active,
+            layers,
             collisions: Vec::new(),
         }
     }
 
-    pub fn rect(dims: Vector2<f32>, active: bool) -> Self {
+    pub fn rect(dims: Vector2<f32>, layer: Vec<usize>, active: bool) -> Self {
         let dims = dims / 2.0;
 
         Self::new(
@@ -31,11 +33,12 @@ impl Collider {
                 Vector2::new(dims.x, dims.y),
                 Vector2::new(dims.x, -dims.y),
             ],
+            layer,
             active,
         )
     }
 
-    pub fn oct(dims: Vector2<f32>, active: bool) -> Self {
+    pub fn oct(dims: Vector2<f32>, layers: Vec<usize>, active: bool) -> Self {
         let dims1 = dims / 2.0;
         let dims2 = Vector2::from([dims1.magnitude(); 2]);
 
@@ -50,6 +53,7 @@ impl Collider {
                 Vector2::new(dims1.x, -dims1.y),
                 Vector2::new(0.0, -dims2.y),
             ],
+            layers,
             active,
         )
     }

@@ -57,21 +57,24 @@ impl<'a> System<'a> for CollisionManager {
 
                 while let Some((ae, (ace, ac), (ate, at))) = objects.pop() {
                     for (be, (bce, bc), (bte, bt)) in &objects {
-                        if let Some(v) = ac.intersecting(at, bc, bt) {
-                            let a = (*be, ace, ate);
-                            let b = (ae, *bce, *bte);
-                            let min_translation = (bt.position() - at.position()).normalize() * v;
+                        if ac.layers.iter().find(|a| bc.layers.contains(a)).is_some() {
+                            if let Some(v) = ac.intersecting(at, bc, bt) {
+                                let a = (*be, ace, ate);
+                                let b = (ae, *bce, *bte);
+                                let min_translation =
+                                    (bt.position() - at.position()).normalize() * v;
 
-                            let ac = world
-                                .cm
-                                .get::<Physical>(ae, &world.em)
-                                .map(|_| -min_translation);
-                            let bc = world
-                                .cm
-                                .get::<Physical>(*be, &world.em)
-                                .map(|_| min_translation);
+                                let ac = world
+                                    .cm
+                                    .get::<Physical>(ae, &world.em)
+                                    .map(|_| -min_translation);
+                                let bc = world
+                                    .cm
+                                    .get::<Physical>(*be, &world.em)
+                                    .map(|_| min_translation);
 
-                            collisions.extend([(ac, a), (bc, b)]);
+                                collisions.extend([(ac, a), (bc, b)]);
+                            }
                         }
                     }
                 }
