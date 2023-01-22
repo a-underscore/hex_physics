@@ -9,11 +9,16 @@ use hex::{
 pub struct Collider {
     pub points: Vec<Vector2<f32>>,
     pub active: bool,
+    pub collisions: Vec<usize>,
 }
 
 impl Collider {
     pub fn new(points: Vec<Vector2<f32>>, active: bool) -> Self {
-        Self { points, active }
+        Self {
+            points,
+            active,
+            collisions: Vec::new(),
+        }
     }
 
     pub fn rect(dims: Vector2<f32>, active: bool) -> Self {

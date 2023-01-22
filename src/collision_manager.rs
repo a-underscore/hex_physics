@@ -16,28 +16,38 @@ pub struct CollisionManager;
 impl<'a> System<'a> for CollisionManager {
     fn update(&mut self, ev: &mut Ev, world: &mut World) -> anyhow::Result<()> {
         if let Ev::Event(Event::MainEventsCleared) = ev {
+            let colliders: Vec<_> = world
+                .em
+                .entities
+                .keys()
+                .copied()
+                .filter_map(|e| Some((e, world.cm.get_cached_id::<Collider>(e, &world.em)?)))
+                .collect();
+
+            for (_, ce) in colliders.iter().copied() {
+                if let Some(c) = world.cm.get_cached_mut::<Collider>(ce) {
+                    c.collisions.clear();
+                }
+            }
+
             let collisions = {
-                let mut objects: Vec<_> = world
-                    .em
-                    .entities
-                    .keys()
-                    .copied()
-                    .filter_map(|e| {
+                let mut objects: Vec<_> = colliders
+                    .into_iter()
+                    .filter_map(|(e, ce)| {
                         world
                             .cm
                             .get_cached_id::<Transform>(e, &world.em)
-                            .and_then(|p| {
+                            .and_then(|te| {
                                 Some((
-                                    p,
                                     e,
                                     world
                                         .cm
-                                        .get::<Collider>(e, &world.em)
-                                        .and_then(|t| t.active.then_some(t))?,
+                                        .get_cached::<Collider>(ce)
+                                        .and_then(|c| c.active.then_some((ce, c)))?,
                                     world
                                         .cm
-                                        .get_cached::<Transform>(p)
-                                        .and_then(|p| p.active.then_some(p))?,
+                                        .get_cached::<Transform>(te)
+                                        .and_then(|t| t.active.then_some((te, t)))?,
                                 ))
                             })
                     })
@@ -45,20 +55,23 @@ impl<'a> System<'a> for CollisionManager {
 
                 let mut collisions = Vec::new();
 
-                while let Some((ac, ae, a, at)) = objects.pop() {
-                    for (bc, be, b, bt) in &objects {
-                        if let Some(v) = a.intersecting(at, b, bt) {
-                            let a = (ac, ae);
-                            let b = (*bc, *be);
+                while let Some((ae, (ace, ac), (ate, at))) = objects.pop() {
+                    for (be, (bce, bc), (bte, bt)) in &objects {
+                        if let Some(v) = ac.intersecting(at, bc, bt) {
+                            let a = (*be, ace, ate);
+                            let b = (ae, *bce, *bte);
                             let min_translation = (bt.position() - at.position()).normalize() * v;
 
-                            if world.cm.get::<Physical>(ae, &world.em).is_some() {
-                                collisions.push((-min_translation, a));
-                            }
+                            let ac = world
+                                .cm
+                                .get::<Physical>(ae, &world.em)
+                                .and_then(|_| Some(-min_translation));
+                            let bc = world
+                                .cm
+                                .get::<Physical>(*be, &world.em)
+                                .and_then(|_| Some(min_translation));
 
-                            if world.cm.get::<Physical>(*be, &world.em).is_some() {
-                                collisions.push((min_translation, b));
-                            }
+                            collisions.extend([(ac, a), (bc, b)]);
                         }
                     }
                 }
@@ -66,9 +79,15 @@ impl<'a> System<'a> for CollisionManager {
                 collisions
             };
 
-            for (t, (ac, _)) in collisions {
-                if let Some(p) = world.cm.get_cached_mut::<Transform>(ac) {
-                    p.set_position(p.position() + t);
+            for (tr, (be, c, t)) in collisions {
+                if let Some(c) = world.cm.get_cached_mut::<Collider>(c) {
+                    c.collisions.push(be);
+                }
+
+                if let Some((tr, t)) =
+                    tr.and_then(|tr| Some((tr, world.cm.get_cached_mut::<Transform>(t)?)))
+                {
+                    t.set_position(t.position() + tr);
                 }
             }
         }
