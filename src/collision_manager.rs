@@ -57,7 +57,7 @@ impl<'a> System<'a> for CollisionManager {
 
                 while let Some((ae, (ace, ac), (ate, at))) = objects.pop() {
                     for (be, (bce, bc), (bte, bt)) in &objects {
-                        if ac.layers.iter().find(|a| bc.layers.contains(a)).is_some() {
+                        if ac.layers.iter().any(|a| bc.layers.contains(a)) {
                             if let Some(v) = ac.intersecting(at, bc, bt) {
                                 let a = (*be, ace, ate);
                                 let b = (ae, *bce, *bte);
