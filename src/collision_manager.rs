@@ -65,11 +65,11 @@ impl<'a> System<'a> for CollisionManager {
                             let ac = world
                                 .cm
                                 .get::<Physical>(ae, &world.em)
-                                .and_then(|_| Some(-min_translation));
+                                .map(|_| -min_translation);
                             let bc = world
                                 .cm
                                 .get::<Physical>(*be, &world.em)
-                                .and_then(|_| Some(min_translation));
+                                .map(|_| min_translation);
 
                             collisions.extend([(ac, a), (bc, b)]);
                         }
