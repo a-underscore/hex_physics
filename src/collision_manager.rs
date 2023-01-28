@@ -26,24 +26,16 @@ impl CollisionManager {
         (usize, usize, usize, Option<Vector2<f32>>),
         (usize, usize, usize, Option<Vector2<f32>>),
     )> {
-        let ac = world
-            .cm
-            .get_cached::<Collider>(cached_ac)
-            .and_then(|c| c.active.then_some(c))?;
-        let at = world
-            .cm
-            .get_cached::<Transform>(cached_at)
-            .and_then(|t| t.active.then_some(t))?;
-        let bc = world
-            .cm
-            .get_cached::<Collider>(cached_bc)
-            .and_then(|c| c.active.then_some(c))?;
-        let bt = world
-            .cm
-            .get_cached::<Transform>(cached_bt)
-            .and_then(|t| t.active.then_some(t))?;
+        let ac = world.cm.get_cached::<Collider>(cached_ac)?;
+        let at = world.cm.get_cached::<Transform>(cached_at)?;
+        let bc = world.cm.get_cached::<Collider>(cached_bc)?;
+        let bt = world.cm.get_cached::<Transform>(cached_bt)?;
 
-        if ac.layers.iter().any(|a| bc.layers.contains(a)) {
+        if ac
+            .layers
+            .iter()
+            .any(|a| bc.layers.contains(a) && !bc.ignore.contains(a))
+        {
             if let Some(v) = ac.intersecting(at, bc, bt) {
                 let min_translation = (bt.position() - at.position()).normalize() * v;
 
