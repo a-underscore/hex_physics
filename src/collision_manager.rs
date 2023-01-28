@@ -10,6 +10,8 @@ use hex::{
     glium::glutin::event::Event,
 };
 
+pub type CollisionResult = (usize, usize, usize, Option<Vector2<f32>>);
+
 #[derive(Default)]
 pub struct CollisionManager;
 
@@ -22,10 +24,7 @@ impl CollisionManager {
         cached_bc: usize,
         cached_bt: usize,
         world: &mut World,
-    ) -> Option<(
-        (usize, usize, usize, Option<Vector2<f32>>),
-        (usize, usize, usize, Option<Vector2<f32>>),
-    )> {
+    ) -> Option<(CollisionResult, CollisionResult)> {
         let ac = world.cm.get_cached::<Collider>(cached_ac)?;
         let at = world.cm.get_cached::<Transform>(cached_at)?;
         let bc = world.cm.get_cached::<Collider>(cached_bc)?;
