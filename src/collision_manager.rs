@@ -30,10 +30,9 @@ impl CollisionManager {
         let bc = world.cm.get_cached::<Collider>(cached_bc)?;
         let bt = world.cm.get_cached::<Transform>(cached_bt)?;
 
-        if ac
-            .layers
-            .iter()
-            .any(|a| bc.layers.contains(a) && !bc.ignore.contains(a))
+        if ac.layers.iter().any(|a| bc.layers.contains(a))
+            && ac.ignore.iter().all(|a| !bc.layers.contains(a))
+            && bc.ignore.iter().all(|b| !ac.layers.contains(b))
         {
             if let Some(v) = ac.intersecting(at, bc, bt) {
                 let min_translation = (bt.position() - at.position()).normalize() * v;
