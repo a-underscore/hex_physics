@@ -24,31 +24,31 @@ impl CollisionManager {
         cached_bc: usize,
         cached_bt: usize,
         world: &mut World,
-    ) -> Option<(CollisionResult, CollisionResult)> {
+    ) -> Option<(bool, CollisionResult, CollisionResult)> {
         let ac = world.cm.get_cached::<Collider>(cached_ac)?;
         let at = world.cm.get_cached::<Transform>(cached_at)?;
         let bc = world.cm.get_cached::<Collider>(cached_bc)?;
         let bt = world.cm.get_cached::<Transform>(cached_bt)?;
 
         if ac.layers.iter().any(|a| bc.layers.contains(a))
-            && ac.ignore.iter().all(|a| !bc.layers.contains(a))
-            && bc.ignore.iter().all(|b| !ac.layers.contains(b))
+            && !ac.ignore.iter().any(|a| bc.layers.contains(a))
+            && !bc.ignore.iter().any(|b| ac.layers.contains(b))
         {
             if let Some(v) = ac.intersecting(at, bc, bt) {
                 let min_translation = (bt.position() - at.position()).normalize() * v;
-
-                let ac = world
+                let act = world
                     .cm
                     .get::<Physical>(ae, &world.em)
                     .map(|_| -min_translation);
-                let bc = world
+                let bct = world
                     .cm
                     .get::<Physical>(be, &world.em)
                     .map(|_| min_translation);
 
                 return Some((
-                    (be, cached_ac, cached_at, ac),
-                    (ae, cached_bc, cached_bt, bc),
+                    bc.ray || ac.ray,
+                    (be, cached_ac, cached_at, act),
+                    (ae, cached_bc, cached_bt, bct),
                 ));
             }
         }
@@ -57,6 +57,7 @@ impl CollisionManager {
     }
 
     pub fn insert(
+        ray_col: bool,
         other_e: usize,
         cached_collider: usize,
         cached_transform: usize,
@@ -64,11 +65,14 @@ impl CollisionManager {
         world: &mut World,
     ) {
         if let Some(c) = world.cm.get_cached_mut::<Collider>(cached_collider) {
-            c.collisions.push(other_e);
+            c.collisions.push((ray_col, other_e));
         }
 
-        if let Some((tr, t)) =
-            tr.and_then(|tr| Some((tr, world.cm.get_cached_mut::<Transform>(cached_transform)?)))
+        println!("{ray_col}");
+
+        if let Some((tr, t)) = tr
+            .and_then(|tr| Some((tr, world.cm.get_cached_mut::<Transform>(cached_transform)?)))
+            .filter(|_| !ray_col)
         {
             t.set_position(t.position() + tr);
         }
@@ -104,11 +108,11 @@ impl<'a> System<'a> for CollisionManager {
 
             while let Some((ae, ac, at)) = objects.pop() {
                 for (be, bc, bt) in objects.iter().cloned() {
-                    if let Some(((ae, at, ac, atr), (be, bt, bc, btr))) =
+                    if let Some((ray, (ae, at, ac, atr), (be, bt, bc, btr))) =
                         Self::detect(ae, ac, at, be, bc, bt, world)
                     {
-                        Self::insert(be, at, ac, atr, world);
-                        Self::insert(ae, bt, bc, btr, world);
+                        Self::insert(ray, ae, bt, bc, btr, world);
+                        Self::insert(ray, be, at, ac, atr, world);
                     }
                 }
             }
