@@ -10,7 +10,7 @@ use hex::{
     glium::glutin::event::Event,
 };
 
-pub type CollisionResult = (usize, usize, usize, Option<Vector2<f32>>);
+pub type Collision = (bool, (Option<Vector2<f32>>, Option<Vector2<f32>>));
 
 #[derive(Default)]
 pub struct CollisionManager;
@@ -24,7 +24,7 @@ impl CollisionManager {
         cached_bc: usize,
         cached_bt: usize,
         world: &mut World,
-    ) -> Option<(bool, CollisionResult, CollisionResult)> {
+    ) -> Option<Collision> {
         let ac = world.cm.get_cached::<Collider>(cached_ac)?;
         let at = world.cm.get_cached::<Transform>(cached_at)?;
         let bc = world.cm.get_cached::<Collider>(cached_bc)?;
@@ -45,11 +45,7 @@ impl CollisionManager {
                     .get::<Physical>(be, &world.em)
                     .map(|_| min_translation);
 
-                return Some((
-                    bc.ray || ac.ray,
-                    (be, cached_ac, cached_at, act),
-                    (ae, cached_bc, cached_bt, bct),
-                ));
+                return Some((ac.ray || bc.ray, (act, bct)));
             }
         }
 
@@ -65,7 +61,7 @@ impl CollisionManager {
         world: &mut World,
     ) {
         if let Some(c) = world.cm.get_cached_mut::<Collider>(cached_collider) {
-            c.collisions.push((ray_col, other_e));
+            c.collisions.push(other_e);
         }
 
         if let Some((tr, t)) = tr
@@ -92,7 +88,11 @@ impl<'a> System<'a> for CollisionManager {
                             .cm
                             .get_cached_id::<Collider>(e, &world.em)
                             .and_then(|c| {
-                                world.cm.get_cached::<Collider>(c)?.active.then_some(c)
+                                world.cm.get_cached_mut::<Collider>(c).and_then(|col| {
+                                    col.collisions.clear();
+
+                                    Some(c)
+                                })
                             })?,
                         world
                             .cm
@@ -106,11 +106,9 @@ impl<'a> System<'a> for CollisionManager {
 
             while let Some((ae, ac, at)) = objects.pop() {
                 for (be, bc, bt) in objects.iter().cloned() {
-                    if let Some((ray, (ae, at, ac, atr), (be, bt, bc, btr))) =
-                        Self::detect(ae, ac, at, be, bc, bt, world)
-                    {
-                        Self::insert(ray, ae, bt, bc, btr, world);
-                        Self::insert(ray, be, at, ac, atr, world);
+                    if let Some((ray, (atr, btr))) = Self::detect(ae, ac, at, be, bc, bt, world) {
+                        Self::insert(ray, ae, bc, bt, btr, world);
+                        Self::insert(ray, be, ac, at, atr, world);
                     }
                 }
             }

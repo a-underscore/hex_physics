@@ -12,7 +12,7 @@ pub struct Collider {
     pub ignore: Vec<usize>,
     pub ray: bool,
     pub active: bool,
-    pub collisions: Vec<(bool, usize)>,
+    pub collisions: Vec<usize>,
 }
 
 impl Collider {
