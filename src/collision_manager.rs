@@ -68,8 +68,6 @@ impl CollisionManager {
             c.collisions.push((ray_col, other_e));
         }
 
-        println!("{ray_col}");
-
         if let Some((tr, t)) = tr
             .and_then(|tr| Some((tr, world.cm.get_cached_mut::<Transform>(cached_transform)?)))
             .filter(|_| !ray_col)
