@@ -88,10 +88,10 @@ impl<'a> System<'a> for CollisionManager {
                             .cm
                             .get_cached_id::<Collider>(e, &world.em)
                             .and_then(|c| {
-                                world.cm.get_cached_mut::<Collider>(c).and_then(|col| {
+                                world.cm.get_cached_mut::<Collider>(c).map(|col| {
                                     col.collisions.clear();
 
-                                    Some(c)
+                                    c
                                 })
                             })?,
                         world
