@@ -141,21 +141,20 @@ impl Collider {
                 }
             }
 
-            if let (Some(a_min), Some(a_max), Some(b_min), Some(b_max)) =
-                (a_min, a_max, b_min, b_max)
-            {
-                if !(a_max < b_min || b_max < a_min) {
-                    let m = (a_max - b_min).min(b_max - a_min);
+            let a_max = a_max?;
+            let a_min = a_min?;
+            let b_max = b_max?;
+            let b_min = b_min?;
 
-                    if min.map(|min| m < min).unwrap_or(true) {
-                        min = Some(m);
-                    }
+            let m = (a_max - b_min).min(b_max - a_min);
 
-                    continue;
-                }
+            if min.map(|min| m < min).unwrap_or(true) {
+                min = Some(m);
             }
 
-            return None;
+            if a_max < b_min || b_max < a_min {
+                return None;
+            }
         }
 
         min
