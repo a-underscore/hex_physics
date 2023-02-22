@@ -89,7 +89,7 @@ impl Collider {
         transform: &Transform,
         b: &Self,
         b_transform: &Transform,
-    ) -> Option<f32> {
+    ) -> Option<Vector2<f32>> {
         let a_points = self
             .points
             .iter()
@@ -146,18 +146,18 @@ impl Collider {
             let b_max = b_max?;
             let b_min = b_min?;
 
-            let m = (a_max - b_min).min(b_max - a_min);
-
-            if min.map(|min| m < min).unwrap_or(true) {
-                min = Some(m);
-            }
-
             if a_max < b_min || b_max < a_min {
                 return None;
             }
+
+            let m = a_max - b_min;
+
+            if min.map(|(min, _)| m < min).unwrap_or(true) {
+                min = Some((a_max - b_min, (a_max - b_min) * normal));
+            }
         }
 
-        min
+        min.map(|(_, m)| m)
     }
 }
 

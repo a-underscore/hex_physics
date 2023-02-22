@@ -1,7 +1,7 @@
 use crate::{collider::Collider, physical::Physical};
 use hex::{
     anyhow,
-    cgmath::{InnerSpace, Vector2},
+    cgmath::Vector2,
     components::Transform,
     ecs::{
         system_manager::{Ev, System},
@@ -35,7 +35,7 @@ impl CollisionManager {
             && !bc.ignore.iter().any(|b| ac.layers.contains(b))
         {
             if let Some(v) = ac.intersecting(at, bc, bt) {
-                let min_translation = (bt.position() - at.position()).normalize() * v;
+                let min_translation = v;
                 let act = world
                     .cm
                     .get::<Physical>(ae, &world.em)
