@@ -34,8 +34,7 @@ impl CollisionManager {
             && !ac.ignore.iter().any(|a| bc.layers.contains(a))
             && !bc.ignore.iter().any(|b| ac.layers.contains(b))
         {
-            if let Some(v) = ac.intersecting(at, bc, bt) {
-                let min_translation = v;
+            if let Some(min_translation) = ac.intersecting(at, bc, bt) {
                 let act = world
                     .cm
                     .get::<Physical>(ae, &world.em)

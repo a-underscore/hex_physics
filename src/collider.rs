@@ -109,13 +109,13 @@ impl Collider {
             let p1 = a_points[i];
             let p2 = a_points[(i + 1) % a_points.len()];
 
-            let normal = Vector2::new(p2.y - p1.y, p1.x - p2.x);
+            let axis = Vector2::new(p2.y - p1.y, p1.x - p2.x);
 
             let mut a_min = None;
             let mut a_max = None;
 
             for p in &a_points {
-                let projected = normal.dot(*p);
+                let projected = axis.dot(*p);
 
                 if a_min.map(|a| projected < a).unwrap_or(true) {
                     a_min = Some(projected);
@@ -130,7 +130,7 @@ impl Collider {
             let mut b_max = None;
 
             for p in &b_points {
-                let projected = normal.dot(*p);
+                let projected = axis.dot(*p);
 
                 if b_min.map(|b| projected < b).unwrap_or(true) {
                     b_min = Some(projected);
@@ -145,15 +145,16 @@ impl Collider {
             let a_min = a_min?;
             let b_max = b_max?;
             let b_min = b_min?;
-
-            if a_max < b_min || b_max < a_min {
+            let (m, axis) = if a_min <= b_min && a_max >= b_min {
+                (a_max - b_min, axis)
+            } else if b_min <= a_min && b_max >= a_min {
+                (b_max - b_min, -axis)
+            } else {
                 return None;
-            }
-
-            let m = a_max - b_min;
+            };
 
             if min.map(|(min, _)| m < min).unwrap_or(true) {
-                min = Some((m, normal));
+                min = Some((m, axis));
             }
         }
 
