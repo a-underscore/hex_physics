@@ -153,7 +153,7 @@ impl Collider {
             let m = a_max - b_min;
 
             if min.map(|(min, _)| m < min).unwrap_or(true) {
-                min = Some((a_max - b_min, (a_max - b_min) * normal));
+                min = Some((m, m * normal));
             }
         }
 
