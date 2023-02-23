@@ -146,12 +146,12 @@ impl Collider {
             let b_max = b_max?;
             let b_min = b_min?;
             let (m, axis) = if a_min <= b_min && a_max >= b_min {
-                (a_max - b_min, axis)
+                Some((a_max - b_min, axis))
             } else if b_min <= a_min && b_max >= a_min {
-                (b_max - a_min, -axis)
+                Some((b_max - a_min, -axis))
             } else {
-                return None;
-            };
+                None
+            }?;
 
             if min.map(|(min, _)| m < min).unwrap_or(true) {
                 min = Some((m, axis));
