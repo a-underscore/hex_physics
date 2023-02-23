@@ -153,11 +153,11 @@ impl Collider {
             let m = a_max - b_min;
 
             if min.map(|(min, _)| m < min).unwrap_or(true) {
-                min = Some((m, m * normal));
+                min = Some((m, normal));
             }
         }
 
-        min.map(|(_, m)| m)
+        min.map(|(m, n)| m * n)
     }
 }
 
