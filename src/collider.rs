@@ -148,7 +148,7 @@ impl Collider {
             let (m, axis) = if a_min <= b_min && a_max >= b_min {
                 (a_max - b_min, axis)
             } else if b_min <= a_min && b_max >= a_min {
-                (b_max - b_min, -axis)
+                (b_max - a_min, -axis)
             } else {
                 return None;
             };
@@ -158,7 +158,7 @@ impl Collider {
             }
         }
 
-        min.map(|(m, n)| m * n)
+        min.map(|(m, a)| m * a)
     }
 }
 
