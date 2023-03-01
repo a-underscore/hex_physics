@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-hex = { git = "https://github.com/a-underscore/hex" }
+hex = { git = "https://github.com/a-underscore/hex", version = "0.1.0" }
