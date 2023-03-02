@@ -51,7 +51,7 @@ impl CollisionManager {
         None
     }
 
-    pub fn insert(
+    pub fn resolve(
         ray_col: bool,
         other_e: usize,
         cached_collider: usize,
@@ -106,8 +106,8 @@ impl<'a> System<'a> for CollisionManager {
             while let Some((ae, ac, at)) = objects.pop() {
                 for (be, bc, bt) in objects.iter().cloned() {
                     if let Some((ray, (atr, btr))) = Self::detect(ae, ac, at, be, bc, bt, world) {
-                        Self::insert(ray, ae, bc, bt, btr, world);
-                        Self::insert(ray, be, ac, at, atr, world);
+                        Self::resolve(ray, ae, bc, bt, btr, world);
+                        Self::resolve(ray, be, ac, at, atr, world);
                     }
                 }
             }
