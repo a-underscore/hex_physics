@@ -4,7 +4,8 @@ use hex::{
     cgmath::Vector2,
     components::Transform,
     ecs::{
-        system_manager::{Ev, System},
+        ev::{Control, Ev},
+        system_manager::System,
         world::World,
     },
     glium::glutin::event::Event,
@@ -74,7 +75,11 @@ impl CollisionManager {
 
 impl<'a> System<'a> for CollisionManager {
     fn update(&mut self, ev: &mut Ev, world: &mut World) -> anyhow::Result<()> {
-        if let Ev::Event(Event::MainEventsCleared) = ev {
+        if let Ev::Event(Control {
+            event: Event::MainEventsCleared,
+            flow: _,
+        }) = ev
+        {
             let mut objects: Vec<_> = world
                 .em
                 .entities

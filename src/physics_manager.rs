@@ -3,7 +3,8 @@ use hex::{
     anyhow,
     components::Transform,
     ecs::{
-        system_manager::{Ev, System},
+        ev::{Control, Ev},
+        system_manager::System,
         world::World,
     },
     glium::glutin::event::Event,
@@ -26,7 +27,11 @@ impl PhysicsManager {
 
 impl<'a> System<'a> for PhysicsManager {
     fn update(&mut self, ev: &mut Ev, world: &mut World) -> anyhow::Result<()> {
-        if let Ev::Event(Event::MainEventsCleared) = ev {
+        if let Ev::Event(Control {
+            event: Event::MainEventsCleared,
+            flow: _,
+        }) = ev
+        {
             let now = Instant::now();
             let delta = now.duration_since(self.frame);
 
