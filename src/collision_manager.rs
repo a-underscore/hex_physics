@@ -3,8 +3,8 @@ use hex::{
     anyhow,
     cgmath::Vector2,
     components::Transform,
-    ecs::{ev::Control, system_manager::System, Ev, World},
     glium::glutin::event::Event,
+    hecs::{ev::Control, system_manager::System, Ev, World},
 };
 
 pub type Collision = (bool, (Option<Vector2<f32>>, Option<Vector2<f32>>));

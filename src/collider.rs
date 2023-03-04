@@ -2,7 +2,7 @@ use hex::{
     cgmath::{InnerSpace, Vector2},
     cid,
     components::Transform,
-    ecs::component_manager::Component,
+    hecs::component_manager::Component,
 };
 
 #[derive(Clone)]

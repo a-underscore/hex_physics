@@ -1,4 +1,4 @@
-use hex::{cgmath::Vector2, cid, ecs::component_manager::Component};
+use hex::{cgmath::Vector2, cid, hecs::component_manager::Component};
 
 #[derive(Clone)]
 pub struct Physical {
