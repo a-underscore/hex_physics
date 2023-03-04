@@ -2,11 +2,7 @@ use crate::physical::Physical;
 use hex::{
     anyhow,
     components::Transform,
-    ecs::{
-        ev::{Control, Ev},
-        system_manager::System,
-        world::World,
-    },
+    ecs::{ev::Control, system_manager::System, Ev, World},
     glium::glutin::event::Event,
 };
 use std::time::{Duration, Instant};

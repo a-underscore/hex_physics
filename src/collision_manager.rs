@@ -3,11 +3,7 @@ use hex::{
     anyhow,
     cgmath::Vector2,
     components::Transform,
-    ecs::{
-        ev::{Control, Ev},
-        system_manager::System,
-        world::World,
-    },
+    ecs::{ev::Control, system_manager::System, Ev, World},
     glium::glutin::event::Event,
 };
 
