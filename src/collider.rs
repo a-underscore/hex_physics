@@ -10,7 +10,7 @@ pub struct Collider {
     pub points: Vec<Vector2<f32>>,
     pub layers: Vec<usize>,
     pub ignore: Vec<usize>,
-    pub ray: bool,
+    pub ghost: bool,
     pub active: bool,
     pub collisions: Vec<usize>,
 }
@@ -20,14 +20,14 @@ impl Collider {
         points: Vec<Vector2<f32>>,
         layers: Vec<usize>,
         ignore: Vec<usize>,
-        ray: bool,
+        ghost: bool,
         active: bool,
     ) -> Self {
         Self {
             points,
             layers,
             ignore,
-            ray,
+            ghost,
             active,
             collisions: Vec::new(),
         }
@@ -37,7 +37,7 @@ impl Collider {
         dims: Vector2<f32>,
         layer: Vec<usize>,
         ignore: Vec<usize>,
-        ray: bool,
+        ghost: bool,
         active: bool,
     ) -> Self {
         let dims = dims / 2.0;
@@ -51,7 +51,7 @@ impl Collider {
             ],
             layer,
             ignore,
-            ray,
+            ghost,
             active,
         )
     }
@@ -60,7 +60,7 @@ impl Collider {
         dims: Vector2<f32>,
         layers: Vec<usize>,
         ignore: Vec<usize>,
-        ray: bool,
+        ghost: bool,
         active: bool,
     ) -> Self {
         let dims1 = dims / 2.0;
@@ -79,7 +79,7 @@ impl Collider {
             ],
             layers,
             ignore,
-            ray,
+            ghost,
             active,
         )
     }

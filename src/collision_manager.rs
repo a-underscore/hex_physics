@@ -45,7 +45,7 @@ impl CollisionManager {
                     .get::<Physical>(be, &world.em)
                     .map(|_| min_translation);
 
-                return Some((ac.ray || bc.ray, (act, bct)));
+                return Some((ac.ghost || bc.ghost, (act, bct)));
             }
         }
 
@@ -53,7 +53,7 @@ impl CollisionManager {
     }
 
     pub fn resolve(
-        ray_col: bool,
+        ghost_col: bool,
         other_e: usize,
         cached_collider: usize,
         cached_transform: usize,
@@ -66,7 +66,7 @@ impl CollisionManager {
 
         if let Some((tr, t)) = tr
             .and_then(|tr| Some((tr, world.cm.get_cached_mut::<Transform>(cached_transform)?)))
-            .filter(|_| !ray_col)
+            .filter(|_| !ghost_col)
         {
             t.set_position(t.position() + tr);
         }
@@ -110,9 +110,9 @@ impl<'a> System<'a> for CollisionManager {
 
             while let Some((ae, ac, at)) = objects.pop() {
                 for (be, bc, bt) in objects.iter().cloned() {
-                    if let Some((ray, (atr, btr))) = Self::detect(ae, ac, at, be, bc, bt, world) {
-                        Self::resolve(ray, ae, bc, bt, btr, world);
-                        Self::resolve(ray, be, ac, at, atr, world);
+                    if let Some((ghost, (atr, btr))) = Self::detect(ae, ac, at, be, bc, bt, world) {
+                        Self::resolve(ghost, ae, bc, bt, btr, world);
+                        Self::resolve(ghost, be, ac, at, atr, world);
                     }
                 }
             }
