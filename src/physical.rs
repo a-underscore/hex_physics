@@ -1,4 +1,4 @@
-use hex::{cgmath::Vector2, ecs::component_manager::Component};
+use hex::{cgmath::Vector2, cid, ecs::component_manager::Component};
 
 #[derive(Clone)]
 pub struct Physical {
@@ -18,4 +18,8 @@ impl From<Physical> for Vector2<f32> {
     }
 }
 
-impl Component for Physical {}
+impl Component for Physical {
+    fn id() -> usize {
+        cid!()
+    }
+}

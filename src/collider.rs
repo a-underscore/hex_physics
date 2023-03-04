@@ -1,5 +1,6 @@
 use hex::{
     cgmath::{InnerSpace, Vector2},
+    cid,
     components::Transform,
     ecs::component_manager::Component,
 };
@@ -161,4 +162,8 @@ impl Collider {
     }
 }
 
-impl Component for Collider {}
+impl Component for Collider {
+    fn id() -> usize {
+        cid!()
+    }
+}
