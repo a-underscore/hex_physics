@@ -15,17 +15,17 @@ pub struct CollisionManager;
 impl CollisionManager {
     pub fn detect(
         ae: usize,
-        cached_ac: usize,
-        cached_at: usize,
+        cache_ac: usize,
+        cache_at: usize,
         be: usize,
-        cached_bc: usize,
-        cached_bt: usize,
+        cache_bc: usize,
+        cache_bt: usize,
         world: &mut World,
     ) -> Option<Collision> {
-        let ac = world.cm.get_cached::<Collider>(cached_ac)?;
-        let at = world.cm.get_cached::<Transform>(cached_at)?;
-        let bc = world.cm.get_cached::<Collider>(cached_bc)?;
-        let bt = world.cm.get_cached::<Transform>(cached_bt)?;
+        let ac = world.cm.get_cache::<Collider>(cache_ac)?;
+        let at = world.cm.get_cache::<Transform>(cache_at)?;
+        let bc = world.cm.get_cache::<Collider>(cache_bc)?;
+        let bt = world.cm.get_cache::<Transform>(cache_bt)?;
 
         if ac.layers.iter().any(|a| bc.layers.contains(a))
             && !ac.ignore.iter().any(|a| bc.layers.contains(a))
@@ -51,17 +51,17 @@ impl CollisionManager {
     pub fn resolve(
         ghost_col: bool,
         other_e: usize,
-        cached_collider: usize,
-        cached_transform: usize,
+        cache_collider: usize,
+        cache_transform: usize,
         tr: Option<Vector2<f32>>,
         world: &mut World,
     ) {
-        if let Some(c) = world.cm.get_cached_mut::<Collider>(cached_collider) {
+        if let Some(c) = world.cm.get_cache_mut::<Collider>(cache_collider) {
             c.collisions.push(other_e);
         }
 
         if let Some((tr, t)) = tr
-            .and_then(|tr| Some((tr, world.cm.get_cached_mut::<Transform>(cached_transform)?)))
+            .and_then(|tr| Some((tr, world.cm.get_cache_mut::<Transform>(cache_transform)?)))
             .filter(|_| !ghost_col)
         {
             t.set_position(t.position() + tr);
@@ -86,9 +86,9 @@ impl<'a> System<'a> for CollisionManager {
                         e,
                         world
                             .cm
-                            .get_cached_id::<Collider>(e, &world.em)
+                            .get_cache_id::<Collider>(e, &world.em)
                             .and_then(|c| {
-                                world.cm.get_cached_mut::<Collider>(c).and_then(|col| {
+                                world.cm.get_cache_mut::<Collider>(c).and_then(|col| {
                                     col.collisions.clear();
 
                                     col.active.then_some(c)
@@ -96,9 +96,9 @@ impl<'a> System<'a> for CollisionManager {
                             })?,
                         world
                             .cm
-                            .get_cached_id::<Transform>(e, &world.em)
+                            .get_cache_id::<Transform>(e, &world.em)
                             .and_then(|t| {
-                                world.cm.get_cached::<Transform>(t)?.active.then_some(t)
+                                world.cm.get_cache::<Transform>(t)?.active.then_some(t)
                             })?,
                     ))
                 })
