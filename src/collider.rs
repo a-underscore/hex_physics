@@ -89,13 +89,13 @@ impl Collider {
             .points
             .iter()
             .cloned()
-            .map(|p| Vec2::truncate(transform.matrix() * p.extend(1.0)))
+            .map(|p| Vec2::trunc(&(transform.matrix() * p.extend(1.0))))
             .collect::<Vec<_>>();
         let b_points = b
             .points
             .iter()
             .cloned()
-            .map(|p| Vec2::truncate(b_transform.matrix() * p.extend(1.0)))
+            .map(|p| Vec2::trunc(&(b_transform.matrix() * p.extend(1.0))))
             .collect::<Vec<_>>();
 
         let mut min = None;
