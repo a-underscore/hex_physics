@@ -1,13 +1,8 @@
-use hex::{
-    cgmath::{InnerSpace, Vector2},
-    cid,
-    components::Transform,
-    hecs::component_manager::Component,
-};
+use hex::{cid, components::Transform, hecs::component_manager::Component, math::Vec2};
 
 #[derive(Clone)]
 pub struct Collider {
-    pub points: Vec<Vector2<f32>>,
+    pub points: Vec<Vec2>,
     pub layers: Vec<usize>,
     pub ignore: Vec<usize>,
     pub ghost: bool,
@@ -17,7 +12,7 @@ pub struct Collider {
 
 impl Collider {
     pub fn new(
-        points: Vec<Vector2<f32>>,
+        points: Vec<Vec2>,
         layers: Vec<usize>,
         ignore: Vec<usize>,
         ghost: bool,
@@ -34,7 +29,7 @@ impl Collider {
     }
 
     pub fn rect(
-        dims: Vector2<f32>,
+        dims: Vec2,
         layer: Vec<usize>,
         ignore: Vec<usize>,
         ghost: bool,
@@ -44,10 +39,10 @@ impl Collider {
 
         Self::new(
             vec![
-                Vector2::new(-dims.x, -dims.y),
-                Vector2::new(-dims.x, dims.y),
-                Vector2::new(dims.x, dims.y),
-                Vector2::new(dims.x, -dims.y),
+                Vec2::new(-dims.x(), -dims.y()),
+                Vec2::new(-dims.x(), dims.y()),
+                Vec2::new(dims.x(), dims.y()),
+                Vec2::new(dims.x(), -dims.y()),
             ],
             layer,
             ignore,
@@ -57,25 +52,25 @@ impl Collider {
     }
 
     pub fn oct(
-        dims: Vector2<f32>,
+        dims: Vec2,
         layers: Vec<usize>,
         ignore: Vec<usize>,
         ghost: bool,
         active: bool,
     ) -> Self {
         let dims1 = dims / 2.0;
-        let dims2 = Vector2::from([dims1.magnitude(); 2]);
+        let dims2 = Vec2([dims1.magnitude(); 2]);
 
         Self::new(
             vec![
-                Vector2::new(-dims1.x, -dims1.y),
-                Vector2::new(-dims2.x, 0.0),
-                Vector2::new(-dims1.x, dims1.y),
-                Vector2::new(0.0, dims2.y),
-                Vector2::new(dims1.x, dims1.y),
-                Vector2::new(dims2.x, 0.0),
-                Vector2::new(dims1.x, -dims1.y),
-                Vector2::new(0.0, -dims2.y),
+                Vec2::new(-dims1.x(), -dims1.y()),
+                Vec2::new(-dims2.x(), 0.0),
+                Vec2::new(-dims1.x(), dims1.y()),
+                Vec2::new(0.0, dims2.y()),
+                Vec2::new(dims1.x(), dims1.y()),
+                Vec2::new(dims2.x(), 0.0),
+                Vec2::new(dims1.x(), -dims1.y()),
+                Vec2::new(0.0, -dims2.y()),
             ],
             layers,
             ignore,
@@ -89,18 +84,18 @@ impl Collider {
         transform: &Transform,
         b: &Self,
         b_transform: &Transform,
-    ) -> Option<Vector2<f32>> {
+    ) -> Option<Vec2> {
         let a_points = self
             .points
             .iter()
             .cloned()
-            .map(|p| (transform.matrix() * p.extend(1.0)).truncate())
+            .map(|p| Vec2::truncate(transform.matrix() * p.extend(1.0)))
             .collect::<Vec<_>>();
         let b_points = b
             .points
             .iter()
             .cloned()
-            .map(|p| (b_transform.matrix() * p.extend(1.0)).truncate())
+            .map(|p| Vec2::truncate(b_transform.matrix() * p.extend(1.0)))
             .collect::<Vec<_>>();
 
         let mut min = None;
@@ -109,7 +104,7 @@ impl Collider {
             let p1 = a_points[i];
             let p2 = a_points[(i + 1) % a_points.len()];
 
-            let axis = Vector2::new(p2.y - p1.y, p1.x - p2.x);
+            let axis = Vec2::new(p2.y() - p1.y(), p1.x() - p2.x());
 
             let mut a_min = None;
             let mut a_max = None;
@@ -158,7 +153,7 @@ impl Collider {
             }
         }
 
-        min.map(|(m, a)| m * a)
+        min.map(|(m, a)| a * m)
     }
 }
 

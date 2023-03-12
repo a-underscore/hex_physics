@@ -1,13 +1,13 @@
 use crate::{collider::Collider, physical::Physical};
 use hex::{
     anyhow,
-    cgmath::Vector2,
     components::Transform,
     glium::glutin::event::Event,
     hecs::{ev::Control, system_manager::System, Ev, World},
+    math::Vec2,
 };
 
-pub type Collision = (bool, (Option<Vector2<f32>>, Option<Vector2<f32>>));
+pub type Collision = (bool, (Option<Vec2>, Option<Vec2>));
 
 #[derive(Default)]
 pub struct CollisionManager;
@@ -53,7 +53,7 @@ impl CollisionManager {
         other_e: usize,
         cache_collider: usize,
         cache_transform: usize,
-        tr: Option<Vector2<f32>>,
+        tr: Option<Vec2>,
         world: &mut World,
     ) {
         if let Some(c) = world.cm.get_cache_mut::<Collider>(cache_collider) {

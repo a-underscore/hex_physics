@@ -1,18 +1,18 @@
-use hex::{cgmath::Vector2, cid, hecs::component_manager::Component};
+use hex::{cid, hecs::component_manager::Component, math::Vec2};
 
 #[derive(Clone)]
 pub struct Physical {
-    pub velocity: Vector2<f32>,
+    pub velocity: Vec2,
     pub active: bool,
 }
 
 impl Physical {
-    pub fn new(velocity: Vector2<f32>, active: bool) -> Self {
+    pub fn new(velocity: Vec2, active: bool) -> Self {
         Self { velocity, active }
     }
 }
 
-impl From<Physical> for Vector2<f32> {
+impl From<Physical> for Vec2 {
     fn from(val: Physical) -> Self {
         val.velocity
     }
