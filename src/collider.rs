@@ -110,7 +110,7 @@ impl Collider {
             let mut a_max = None;
 
             for p in &a_points {
-                let projected = axis.dot(p);
+                let projected = axis.dot(*p);
 
                 if a_min.map(|a| projected < a).unwrap_or(true) {
                     a_min = Some(projected);
@@ -125,7 +125,7 @@ impl Collider {
             let mut b_max = None;
 
             for p in &b_points {
-                let projected = axis.dot(p);
+                let projected = axis.dot(*p);
 
                 if b_min.map(|b| projected < b).unwrap_or(true) {
                     b_min = Some(projected);
