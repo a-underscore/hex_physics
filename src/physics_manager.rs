@@ -2,8 +2,8 @@ use crate::physical::Physical;
 use hex::{
     anyhow,
     components::Transform,
+    ecs::{ev::Control, system_manager::System, Ev, World},
     glium::glutin::event::Event,
-    hecs::{ev::Control, system_manager::System, Ev, World},
 };
 use std::time::{Duration, Instant};
 

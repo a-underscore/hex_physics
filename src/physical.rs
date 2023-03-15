@@ -1,4 +1,4 @@
-use hex::{cid, hecs::component_manager::Component, math::Vec2};
+use hex::{cid, ecs::component_manager::Component, math::Vec2};
 
 #[derive(Clone)]
 pub struct Physical {

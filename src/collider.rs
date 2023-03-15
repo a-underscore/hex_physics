@@ -1,4 +1,4 @@
-use hex::{cid, components::Transform, hecs::component_manager::Component, math::Vec2};
+use hex::{cid, components::Transform, ecs::component_manager::Component, math::Vec2};
 
 #[derive(Clone)]
 pub struct Collider {
