@@ -66,47 +66,28 @@ impl PhysicsManager {
         tr: Option<Vec2>,
         world: &mut World,
     ) {
-        if let Some(c) = world.cm.get_cache_mut::<Collider>(cache_collider) {
-            c.collisions.push(other_e);
-        }
-
-        if let Some((tr, t)) = tr
-            .and_then(|tr| Some((tr, world.cm.get_cache_mut::<Transform>(cache_transform)?)))
-            .filter(|_| !ghost_col)
+        if let Some(c) = world
+            .cm
+            .get_cache_mut::<Collider>(cache_collider)
+            .and_then(|c| (!c.collisions.contains(&other_e)).then_some(c))
         {
-            t.set_position(t.position() + tr);
+            c.collisions.push(other_e);
+
+            if let Some((tr, t)) = tr.and_then(|tr| {
+                (!ghost_col).then_some((tr, world.cm.get_cache_mut::<Transform>(cache_transform)?))
+            }) {
+                t.set_position(t.position() + tr);
+            }
         }
     }
 
-    pub fn check_collisions(&mut self, world: &mut World) {
-        let mut objects: Vec<_> = world
-            .em
-            .entities
-            .keys()
-            .cloned()
-            .filter_map(|e| {
-                Some((
-                    e,
-                    world
-                        .cm
-                        .get_cache_id::<Collider>(e, &world.em)
-                        .and_then(|c| {
-                            world.cm.get_cache_mut::<Collider>(c).and_then(|col| {
-                                col.collisions.clear();
-
-                                col.active.then_some(c)
-                            })
-                        })?,
-                    world
-                        .cm
-                        .get_cache_id::<Transform>(e, &world.em)
-                        .and_then(|t| world.cm.get_cache::<Transform>(t)?.active.then_some(t))?,
-                ))
-            })
-            .collect();
-
-        while let Some((ae, ac, at)) = objects.pop() {
-            for (be, bc, bt) in objects.iter().cloned() {
+    pub fn check_collisions(
+        &mut self,
+        mut entities: Vec<(usize, usize, usize)>,
+        world: &mut World,
+    ) {
+        while let Some((ae, ac, at)) = entities.pop() {
+            for (be, bc, bt) in entities.iter().cloned() {
                 if let Some((ghost, (atr, btr))) = Self::detect(ae, ac, at, be, bc, bt, world) {
                     Self::resolve(ghost, ae, bc, bt, btr, world);
                     Self::resolve(ghost, be, ac, at, atr, world);
@@ -128,6 +109,34 @@ impl<'a> System<'a> for PhysicsManager {
 
             self.frame = now;
 
+            let entities: Vec<_> = world
+                .em
+                .entities
+                .keys()
+                .cloned()
+                .filter_map(|e| {
+                    Some((
+                        e,
+                        world
+                            .cm
+                            .get_cache_id::<Collider>(e, &world.em)
+                            .and_then(|c| {
+                                world.cm.get_cache_mut::<Collider>(c).and_then(|col| {
+                                    col.collisions.clear();
+
+                                    col.active.then_some(c)
+                                })
+                            })?,
+                        world
+                            .cm
+                            .get_cache_id::<Transform>(e, &world.em)
+                            .and_then(|t| {
+                                world.cm.get_cache::<Transform>(t)?.active.then_some(t)
+                            })?,
+                    ))
+                })
+                .collect();
+
             for _ in 0..self.step_amount {
                 for e in world.em.entities.clone().into_keys() {
                     if let Some(velocity) = world
@@ -141,7 +150,7 @@ impl<'a> System<'a> for PhysicsManager {
                                     + velocity / self.step_amount as f32 * delta.as_secs_f32(),
                             );
 
-                            self.check_collisions(world);
+                            self.check_collisions(entities.clone(), world);
                         }
                     }
                 }
