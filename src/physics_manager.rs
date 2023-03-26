@@ -72,12 +72,12 @@ impl PhysicsManager {
             .and_then(|c| (!c.collisions.contains(&other_e)).then_some(c))
         {
             c.collisions.push(other_e);
+        }
 
-            if let Some((tr, t)) = tr.and_then(|tr| {
-                (!ghost_col).then_some((tr, world.cm.get_cache_mut::<Transform>(cache_transform)?))
-            }) {
-                t.set_position(t.position() + tr);
-            }
+        if let Some((tr, t)) = tr.and_then(|tr| {
+            (!ghost_col).then_some((tr, world.cm.get_cache_mut::<Transform>(cache_transform)?))
+        }) {
+            t.set_position(t.position() + tr);
         }
     }
 
