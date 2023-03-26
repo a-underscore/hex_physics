@@ -6,7 +6,7 @@ use hex::{
     glium::glutin::event::Event,
     math::Vec2,
 };
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 pub type Collision = (bool, (Option<Vec2>, Option<Vec2>));
 
