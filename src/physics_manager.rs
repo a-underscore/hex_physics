@@ -12,13 +12,15 @@ pub type Collision = (bool, (Option<Vec2>, Option<Vec2>));
 
 pub struct PhysicsManager {
     pub step_amount: usize,
+    pub max_delta: Duration,
     frame: Instant,
 }
 
 impl PhysicsManager {
-    pub fn new(step_amount: usize) -> Self {
+    pub fn new(step_amount: usize, max_delta: Duration) -> Self {
         Self {
             step_amount,
+            max_delta,
             frame: Instant::now(),
         }
     }
@@ -147,7 +149,8 @@ impl<'a> System<'a> for PhysicsManager {
                         if let Some(t) = world.cm.get_mut::<Transform>(e, &world.em) {
                             t.set_position(
                                 t.position()
-                                    + velocity / self.step_amount as f32 * delta.as_secs_f32(),
+                                    + velocity / self.step_amount as f32
+                                        * delta.min(self.max_delta).as_secs_f32(),
                             );
 
                             self.check_collisions(entities.clone(), world);
