@@ -4,17 +4,16 @@ use hex::{cid, ecs::component_manager::Component, math::Vec2};
 pub struct Physical {
     pub velocity: Vec2,
     pub active: bool,
+    pub last_position: Option<Vec2>,
 }
 
 impl Physical {
     pub fn new(velocity: Vec2, active: bool) -> Self {
-        Self { velocity, active }
-    }
-}
-
-impl From<Physical> for Vec2 {
-    fn from(val: Physical) -> Self {
-        val.velocity
+        Self {
+            velocity,
+            active,
+            last_position: None,
+        }
     }
 }
 
