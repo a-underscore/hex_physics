@@ -39,7 +39,7 @@ impl PhysicsManager {
             && !ac.ignore.iter().any(|a| bc.layers.contains(a))
             && !bc.ignore.iter().any(|b| ac.layers.contains(b))
         {
-            if let Some(min_translation) = ac.intersecting(&at, &bc, &bt) {
+            if let Some(min_translation) = ac.intersecting(at, bc, bt) {
                 return Some((
                     ac.ghost || bc.ghost,
                     (
@@ -122,7 +122,7 @@ impl PhysicsManager {
                         ))
                     })
             {
-                Self::resolve(ghost, ae, bc.clone(), bt.clone(), btr, world);
+                Self::resolve(ghost, ae, *bc, *bt, btr, world);
                 Self::resolve(ghost, *be, ac, at, atr, world);
             }
         }
