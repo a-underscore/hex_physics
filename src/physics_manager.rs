@@ -70,33 +70,27 @@ impl PhysicsManager {
 
     pub fn check_collisions(
         &mut self,
-        mut entities: Vec<(usize, usize, usize)>,
+        mut entities: Vec<(
+            usize,
+            (usize, Collider),
+            (usize, Transform),
+            Option<Physical>,
+        )>,
         world: &mut World,
     ) {
-        while let Some((ae, ac, at)) = entities.pop() {
+        while let Some((ae, (ac, a_col), (at, a_transform), a_physical)) = entities.pop() {
             for ((be, bc, bt), (ghost, (atr, btr))) in entities
-                .iter()
+                .par_iter()
                 .cloned()
-                .filter_map(|(be, bc, bt)| {
+                .filter_map(|(be, (bc, b_col), (bt, b_transform), b_physical)| {
                     Some((
-                        (
-                            world.cm.get_cache::<Collider>(ac)?.clone(),
-                            world.cm.get_cache::<Transform>(at)?.clone(),
-                            world.cm.get::<Physical>(ae, &world.em).cloned(),
-                        ),
-                        (
-                            (be, bc, bt),
-                            (
-                                world.cm.get_cache::<Collider>(bc)?.clone(),
-                                world.cm.get_cache::<Transform>(bt)?.clone(),
-                                world.cm.get::<Physical>(be, &world.em).cloned(),
-                            ),
-                        ),
+                        (be, bc, bt),
+                        Self::detect(
+                            (a_col.clone(), a_transform.clone(), a_physical.clone()),
+                            (b_col, b_transform, b_physical),
+                        )?,
                     ))
                 })
-                .collect::<Vec<_>>()
-                .into_par_iter()
-                .filter_map(|(a, ((be, bc, bt), b))| Some(((be, bc, bt), Self::detect(a, b)?)))
                 .collect::<Vec<_>>()
             {
                 Self::resolve(ghost, ae, bc, bt, btr, world);
@@ -133,15 +127,18 @@ impl<'a> System<'a> for PhysicsManager {
                                 world.cm.get_cache_mut::<Collider>(c).and_then(|col| {
                                     col.collisions.clear();
 
-                                    col.active.then_some(c)
+                                    col.active.then(|| (c, col.clone()))
                                 })
                             })?,
                         world
                             .cm
                             .get_cache_id::<Transform>(e, &world.em)
                             .and_then(|t| {
-                                world.cm.get_cache::<Transform>(t)?.active.then_some(t)
+                                world.cm.get_cache::<Transform>(t).and_then(|transform| {
+                                    transform.active.then(|| (t, transform.clone()))
+                                })
                             })?,
+                        world.cm.get::<Physical>(e, &world.em).cloned(),
                     ))
                 })
                 .collect();
