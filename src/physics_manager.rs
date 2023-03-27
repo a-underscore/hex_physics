@@ -10,6 +10,12 @@ use rayon::prelude::*;
 use std::time::{Duration, Instant};
 
 pub type Collision = (bool, (Option<Vec2>, Option<Vec2>));
+pub type Colliders = (
+    usize,
+    (usize, Collider),
+    (usize, Transform),
+    Option<Physical>,
+);
 
 pub struct PhysicsManager {
     pub step_amount: usize,
@@ -68,16 +74,7 @@ impl PhysicsManager {
         }
     }
 
-    pub fn check_collisions(
-        &mut self,
-        mut entities: Vec<(
-            usize,
-            (usize, Collider),
-            (usize, Transform),
-            Option<Physical>,
-        )>,
-        world: &mut World,
-    ) {
+    pub fn check_collisions(&mut self, mut entities: Vec<Colliders>, world: &mut World) {
         while let Some((ae, (ac, a_col), (at, a_transform), a_physical)) = entities.pop() {
             for ((be, bc, bt), (ghost, (atr, btr))) in entities
                 .par_iter()
