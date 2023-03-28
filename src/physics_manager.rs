@@ -60,12 +60,13 @@ impl PhysicsManager {
         tr: Option<Vec2>,
         world: &mut World,
     ) -> Option<()> {
-        world
+        if let Some(collider) = world
             .cm
             .get_cache_mut::<Collider>(cache_collider)
-            .and_then(|c| (!c.collisions.contains(&other_e)).then_some(c))?
-            .collisions
-            .push(other_e);
+            .and_then(|c| (!c.collisions.contains(&other_e)).then_some(c))
+        {
+            collider.collisions.push(other_e);
+        }
 
         let (tr, t) = tr.and_then(|tr| {
             (!ghost_col).then_some((tr, world.cm.get_cache_mut::<Transform>(cache_transform)?))
