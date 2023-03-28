@@ -9,12 +9,7 @@ use hex::{
 use std::time::{Duration, Instant};
 
 pub type Collision = (bool, (Option<Vec2>, Option<Vec2>));
-pub type Colliders = (
-    usize,
-    (usize, Collider),
-    (usize, Transform),
-    Option<Physical>,
-);
+pub type Colliders = Vec<(usize, (usize, Collider), usize, Option<Physical>)>;
 
 pub struct PhysicsManager {
     pub step_amount: usize,
@@ -32,9 +27,13 @@ impl PhysicsManager {
     }
 
     pub fn detect(
-        (ac, at, ap): (&Collider, &Transform, &Option<Physical>),
-        (bc, bt, bp): (&Collider, &Transform, &Option<Physical>),
+        (ac, at, ap): (&Collider, usize, &Option<Physical>),
+        (bc, bt, bp): (&Collider, usize, &Option<Physical>),
+        world: &mut World,
     ) -> Option<Collision> {
+        let at = world.cm.get_cache::<Transform>(at)?;
+        let bt = world.cm.get_cache::<Transform>(bt)?;
+
         if ac.layers.iter().any(|a| bc.layers.contains(a))
             && !ac.ignore.iter().any(|a| bc.layers.contains(a))
             && !bc.ignore.iter().any(|b| ac.layers.contains(b))
@@ -63,7 +62,8 @@ impl PhysicsManager {
     ) -> Option<()> {
         world
             .cm
-            .get_cache_mut::<Collider>(cache_collider)?
+            .get_cache_mut::<Collider>(cache_collider)
+            .and_then(|c| (!c.collisions.contains(&other_e)).then_some(c))?
             .collisions
             .push(other_e);
 
@@ -76,54 +76,15 @@ impl PhysicsManager {
         Some(())
     }
 
-    pub fn check_collisions(&mut self, world: &mut World) {
-        let mut entities: Vec<_> = world
-            .em
-            .entities
-            .keys()
-            .cloned()
-            .filter_map(|e| {
-                Some((
-                    e,
-                    world
-                        .cm
-                        .get_cache_id::<Collider>(e, &world.em)
-                        .and_then(|c| {
-                            world.cm.get_cache_mut::<Collider>(c).and_then(|col| {
-                                col.collisions.clear();
-
-                                col.active.then(|| (c, col.clone()))
-                            })
-                        })?,
-                    world
-                        .cm
-                        .get_cache_id::<Transform>(e, &world.em)
-                        .and_then(|t| {
-                            world.cm.get_cache::<Transform>(t).and_then(|transform| {
-                                transform.active.then(|| (t, transform.clone()))
-                            })
-                        })?,
-                    world.cm.get::<Physical>(e, &world.em).cloned(),
-                ))
-            })
-            .collect();
-
-        while let Some((ae, (ac, a_col), (at, a_transform), a_physical)) = entities.pop() {
-            for ((be, bc, bt), (ghost, (atr, btr))) in
-                entities
-                    .iter()
-                    .filter_map(|(be, (bc, b_col), (bt, b_transform), b_physical)| {
-                        Some((
-                            (be, bc, bt),
-                            Self::detect(
-                                (&a_col, &a_transform, &a_physical),
-                                (b_col, b_transform, b_physical),
-                            )?,
-                        ))
-                    })
-            {
-                Self::resolve(ghost, ae, *bc, *bt, btr, world);
-                Self::resolve(ghost, *be, ac, at, atr, world);
+    pub fn check_collisions(&mut self, mut entities: Colliders, world: &mut World) {
+        while let Some((ae, (ac, a_col), at, a_physical)) = entities.pop() {
+            for (be, (bc, b_col), bt, b_physical) in &entities {
+                if let Some((ghost, (atr, btr))) =
+                    Self::detect((&a_col, at, &a_physical), (b_col, *bt, b_physical), world)
+                {
+                    Self::resolve(ghost, ae, *bc, *bt, btr, world);
+                    Self::resolve(ghost, *be, ac, at, atr, world);
+                }
             }
         }
     }
@@ -141,6 +102,38 @@ impl<'a> System<'a> for PhysicsManager {
 
             self.frame = now;
 
+            let entities: Vec<_> = world
+                .em
+                .entities
+                .keys()
+                .cloned()
+                .filter_map(|e| {
+                    Some((
+                        e,
+                        world
+                            .cm
+                            .get_cache_id::<Collider>(e, &world.em)
+                            .and_then(|c| {
+                                world.cm.get_cache_mut::<Collider>(c).and_then(|col| {
+                                    col.collisions.clear();
+
+                                    col.active.then(|| (c, col.clone()))
+                                })
+                            })?,
+                        world
+                            .cm
+                            .get_cache_id::<Transform>(e, &world.em)
+                            .and_then(|t| {
+                                world
+                                    .cm
+                                    .get_cache::<Transform>(t)
+                                    .and_then(|transform| transform.active.then_some(t))
+                            })?,
+                        world.cm.get::<Physical>(e, &world.em).cloned(),
+                    ))
+                })
+                .collect();
+
             for _ in 0..self.step_amount {
                 for e in world.em.entities.clone().into_keys() {
                     if let Some(velocity) = world
@@ -155,7 +148,7 @@ impl<'a> System<'a> for PhysicsManager {
                                         * delta.min(self.max_delta).as_secs_f32(),
                             );
 
-                            self.check_collisions(world);
+                            self.check_collisions(entities.clone(), world);
                         }
                     }
                 }
