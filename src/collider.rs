@@ -1,20 +1,25 @@
-use hex::{cid, components::Transform, ecs::component_manager::Component, math::Vec2};
+use hex::{
+    cid,
+    components::Transform,
+    ecs::{component_manager::Component, Id},
+    math::Vec2,
+};
 
 #[derive(Clone)]
 pub struct Collider {
     pub points: Vec<Vec2>,
-    pub layers: Vec<usize>,
-    pub ignore: Vec<usize>,
+    pub layers: Vec<Id>,
+    pub ignore: Vec<Id>,
     pub ghost: bool,
     pub active: bool,
-    pub collisions: Vec<usize>,
+    pub collisions: Vec<Id>,
 }
 
 impl Collider {
     pub fn new(
         points: Vec<Vec2>,
-        layers: Vec<usize>,
-        ignore: Vec<usize>,
+        layers: Vec<Id>,
+        ignore: Vec<Id>,
         ghost: bool,
         active: bool,
     ) -> Self {
@@ -28,13 +33,7 @@ impl Collider {
         }
     }
 
-    pub fn rect(
-        dims: Vec2,
-        layer: Vec<usize>,
-        ignore: Vec<usize>,
-        ghost: bool,
-        active: bool,
-    ) -> Self {
+    pub fn rect(dims: Vec2, layer: Vec<Id>, ignore: Vec<Id>, ghost: bool, active: bool) -> Self {
         let dims = dims / 2.0;
 
         Self::new(
@@ -51,13 +50,7 @@ impl Collider {
         )
     }
 
-    pub fn oct(
-        dims: Vec2,
-        layers: Vec<usize>,
-        ignore: Vec<usize>,
-        ghost: bool,
-        active: bool,
-    ) -> Self {
+    pub fn oct(dims: Vec2, layers: Vec<Id>, ignore: Vec<Id>, ghost: bool, active: bool) -> Self {
         let dims1 = dims / 2.0;
         let dims2 = Vec2([dims1.magnitude(); 2]);
 
@@ -158,7 +151,7 @@ impl Collider {
 }
 
 impl Component for Collider {
-    fn id() -> usize {
+    fn id() -> Id {
         cid!()
     }
 }

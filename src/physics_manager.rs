@@ -2,23 +2,23 @@ use crate::{Collider, Physical};
 use hex::{
     anyhow,
     components::Transform,
-    ecs::{ev::Control, system_manager::System, Ev, Scene, World},
+    ecs::{ev::Control, system_manager::System, Ev, Id, Scene, World},
     glium::glutin::event::Event,
     math::Vec2,
 };
 use std::time::{Duration, Instant};
 
 pub type Collision = (bool, (Option<Vec2>, Option<Vec2>));
-pub type Colliders = Vec<(usize, (usize, Collider), usize, Option<Physical>)>;
+pub type Colliders = Vec<(Id, (Id, Collider), Id, Option<Physical>)>;
 
 pub struct PhysicsManager {
-    pub step_amount: usize,
+    pub step_amount: Id,
     pub max_delta: Duration,
     frame: Instant,
 }
 
 impl PhysicsManager {
-    pub fn new(step_amount: usize, max_delta: Duration) -> Self {
+    pub fn new(step_amount: Id, max_delta: Duration) -> Self {
         Self {
             step_amount,
             max_delta,
@@ -27,8 +27,8 @@ impl PhysicsManager {
     }
 
     pub fn detect(
-        (ac, at, ap): (&Collider, usize, &Option<Physical>),
-        (bc, bt, bp): (&Collider, usize, &Option<Physical>),
+        (ac, at, ap): (&Collider, Id, &Option<Physical>),
+        (bc, bt, bp): (&Collider, Id, &Option<Physical>),
         world: &mut World,
     ) -> Option<Collision> {
         let at = world.cm.get_cache::<Transform>(at)?;
@@ -54,9 +54,9 @@ impl PhysicsManager {
 
     pub fn resolve(
         ghost_col: bool,
-        other_e: usize,
-        cache_collider: usize,
-        cache_transform: usize,
+        other_e: Id,
+        cache_collider: Id,
+        cache_transform: Id,
         tr: Option<Vec2>,
         world: &mut World,
     ) -> Option<()> {

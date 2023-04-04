@@ -1,4 +1,8 @@
-use hex::{cid, ecs::component_manager::Component, math::Vec2};
+use hex::{
+    cid,
+    ecs::{component_manager::Component, Id},
+    math::Vec2,
+};
 
 #[derive(Clone)]
 pub struct Physical {
@@ -18,7 +22,7 @@ impl Physical {
 }
 
 impl Component for Physical {
-    fn id() -> usize {
+    fn id() -> Id {
         cid!()
     }
 }
