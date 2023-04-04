@@ -1,6 +1,6 @@
 use hex::{
-    cid,
     ecs::{component_manager::Component, Id},
+    id,
     math::Vec2,
 };
 
@@ -23,6 +23,6 @@ impl Physical {
 
 impl Component for Physical {
     fn id() -> Id {
-        cid!()
+        id!()
     }
 }

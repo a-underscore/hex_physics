@@ -1,7 +1,7 @@
 use hex::{
-    cid,
     components::Transform,
     ecs::{component_manager::Component, Id},
+    id,
     math::Vec2,
 };
 
@@ -152,6 +152,6 @@ impl Collider {
 
 impl Component for Collider {
     fn id() -> Id {
-        cid!()
+        id!()
     }
 }
