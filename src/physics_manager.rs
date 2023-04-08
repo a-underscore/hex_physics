@@ -99,7 +99,7 @@ impl<'a> System<'a> for PhysicsManager {
         }) = ev
         {
             let now = Instant::now();
-            let delta = now.duration_since(self.frame);
+            let delta = now.duration_since(self.frame).min(self.max_delta);
 
             self.frame = now;
 
@@ -137,20 +137,33 @@ impl<'a> System<'a> for PhysicsManager {
 
             for _ in 0..self.step_amount {
                 for e in world.em.entities.clone().into_keys() {
-                    if let Some(velocity) = world
+                    if let Some((pos, physical)) = world
                         .cm
                         .get_mut::<Physical>(e, &world.em)
-                        .and_then(|p| p.active.then_some(p.velocity))
-                    {
-                        if let Some(t) = world.cm.get_mut::<Transform>(e, &world.em) {
+                        .and_then(|p| p.active.then_some(p.force))
+                        .and_then(|force| {
+                            let t = world.cm.get_mut::<Transform>(e, &world.em)?;
+                            let pos = t.position();
+
                             t.set_position(
                                 t.position()
-                                    + velocity / self.step_amount as f32
-                                        * delta.min(self.max_delta).as_secs_f32(),
+                                    + force / self.step_amount as f32 * delta.as_secs_f32(),
                             );
 
                             self.check_collisions(entities.clone(), world);
+
+                            Some(pos)
+                        })
+                        .and_then(|pos| Some((pos, world.cm.get_mut::<Physical>(e, &world.em)?)))
+                    {
+                        if let Some(vel) = physical
+                            .last_position()
+                            .map(|l| (pos - l) * delta.as_secs_f32())
+                        {
+                            physical.set_velocity(vel);
                         }
+
+                        physical.set_last_position(pos);
                     }
                 }
             }
