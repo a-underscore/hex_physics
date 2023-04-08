@@ -158,7 +158,7 @@ impl<'a> System<'a> for PhysicsManager {
                     {
                         if let Some(vel) = physical
                             .last_position()
-                            .map(|l| (pos - l) * delta.as_secs_f32())
+                            .map(|l| (pos - l) / delta.as_secs_f32())
                         {
                             physical.set_velocity(vel);
                         }
