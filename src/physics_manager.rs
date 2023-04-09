@@ -117,16 +117,13 @@ impl PhysicsManager {
         }
 
         let checked = RwLock::new(Vec::new());
-        let tree = RwLock::new(tree);
 
         for ((ae, ac, at), (be, bc, bt), (ghost, (atr, btr))) in entities
             .par_iter()
             .cloned()
             .filter_map(|(ae, (ac, a_col), (at, a_transform), a_physical)| {
                 Some(
-                    tree.read()
-                        .ok()?
-                        .query(Box2::new(a_transform.position(), a_col.boundary))
+                    tree.query(Box2::new(a_transform.position(), a_col.boundary))
                         .into_iter()
                         .filter_map(|(_, t)| t)
                         .filter_map(|(be, (bc, b_col), (bt, b_transform), b_physical)| {
