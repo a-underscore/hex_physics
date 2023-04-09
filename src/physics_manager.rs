@@ -55,7 +55,7 @@ impl PhysicsManager {
         cache_transform: Id,
         tr: Option<Vec2>,
         world: &mut World,
-    ) -> Option<()> {
+    ) {
         if let Some(collider) = world
             .cm
             .get_cache_mut::<Collider>(cache_collider)
@@ -64,13 +64,11 @@ impl PhysicsManager {
             collider.collisions.push(other_e);
         }
 
-        let (tr, t) = tr.and_then(|tr| {
+        if let Some((tr, t)) = tr.and_then(|tr| {
             (!ghost_col).then_some((tr, world.cm.get_cache_mut::<Transform>(cache_transform)?))
-        })?;
-
-        t.set_position(t.position() + tr);
-
-        Some(())
+        }) {
+            t.set_position(t.position() + tr);
+        }
     }
 
     pub fn check_collisions(&mut self, mut entities: Colliders, world: &mut World) {
