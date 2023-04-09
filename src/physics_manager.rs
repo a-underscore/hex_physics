@@ -1,4 +1,4 @@
-use crate::{Collider, Physical};
+use crate::{quadtree::*, Collider, Physical};
 use hex::{
     anyhow,
     components::Transform,
@@ -14,14 +14,16 @@ pub type Colliders = Vec<(Id, (Id, Collider), Id, Option<Physical>)>;
 pub struct PhysicsManager {
     pub step_amount: Id,
     pub max_delta: Duration,
+    pub bounds: (Box2, usize),
     frame: Instant,
 }
 
 impl PhysicsManager {
-    pub fn new(step_amount: Id, max_delta: Duration) -> Self {
+    pub fn new(step_amount: Id, max_delta: Duration, bounds: (Box2, usize)) -> Self {
         Self {
             step_amount,
             max_delta,
+            bounds,
             frame: Instant::now(),
         }
     }
@@ -71,18 +73,56 @@ impl PhysicsManager {
         }
     }
 
-    pub fn check_collisions(&mut self, mut entities: Colliders, world: &mut World) {
-        while let Some((ae, (ac, a_col), at, a_physical)) = entities.pop() {
-            if let Some(a_transform) = world.cm.get_cache::<Transform>(at).cloned() {
-                for (be, (bc, b_col), bt, b_physical) in &entities {
-                    if let Some(b_transform) = world.cm.get_cache::<Transform>(*bt).cloned() {
-                        if let Some((ghost, (atr, btr))) = Self::detect(
-                            (&a_col, &a_transform, &a_physical),
-                            (b_col, &b_transform, b_physical),
-                        ) {
-                            Self::resolve(ghost, ae, *bc, *bt, btr, world);
-                            Self::resolve(ghost, *be, ac, at, atr, world);
-                        }
+    pub fn check_collisions(&mut self, world: &mut World) {
+        let mut entities: Vec<_> = world
+            .em
+            .entities
+            .keys()
+            .cloned()
+            .filter_map(|e| {
+                Some((
+                    e,
+                    world
+                        .cm
+                        .get_cache_id::<Collider>(e, &world.em)
+                        .and_then(|c| {
+                            world.cm.get_cache_mut::<Collider>(c).and_then(|col| {
+                                col.collisions.clear();
+
+                                col.active.then(|| (c, col.clone()))
+                            })
+                        })?,
+                    world
+                        .cm
+                        .get_cache_id::<Transform>(e, &world.em)
+                        .and_then(|t| {
+                            world.cm.get_cache::<Transform>(t).and_then(|transform| {
+                                transform.active.then_some((t, transform.clone()))
+                            })
+                        })?,
+                    world.cm.get::<Physical>(e, &world.em).cloned(),
+                ))
+            })
+            .collect();
+
+        while let Some((ae, (ac, a_col), (at, a_transform), a_physical)) = entities.pop() {
+            let (boundary, cap) = self.bounds.clone();
+            let mut tree = QuadTree::new(boundary, cap);
+
+            for e @ (_, _, (_, b_transform), _) in &entities {
+                tree.insert(b_transform.position(), e.clone());
+            }
+
+            if let Some(entities) = tree.query(Box2::new(a_transform.position(), a_col.boundary)) {
+                for (be, (bc, b_col), (bt, b_transform), b_physical) in
+                    entities.into_iter().filter_map(|(_, t)| t)
+                {
+                    if let Some((ghost, (atr, btr))) = Self::detect(
+                        (&a_col, &a_transform, &a_physical),
+                        (&b_col, &b_transform, &b_physical),
+                    ) {
+                        Self::resolve(ghost, ae, bc, bt, btr, world);
+                        Self::resolve(ghost, be, ac, at, atr, world);
                     }
                 }
             }
@@ -102,38 +142,6 @@ impl<'a> System<'a> for PhysicsManager {
 
             self.frame = now;
 
-            let entities: Vec<_> = world
-                .em
-                .entities
-                .keys()
-                .cloned()
-                .filter_map(|e| {
-                    Some((
-                        e,
-                        world
-                            .cm
-                            .get_cache_id::<Collider>(e, &world.em)
-                            .and_then(|c| {
-                                world.cm.get_cache_mut::<Collider>(c).and_then(|col| {
-                                    col.collisions.clear();
-
-                                    col.active.then(|| (c, col.clone()))
-                                })
-                            })?,
-                        world
-                            .cm
-                            .get_cache_id::<Transform>(e, &world.em)
-                            .and_then(|t| {
-                                world
-                                    .cm
-                                    .get_cache::<Transform>(t)
-                                    .and_then(|transform| transform.active.then_some(t))
-                            })?,
-                        world.cm.get::<Physical>(e, &world.em).cloned(),
-                    ))
-                })
-                .collect();
-
             for _ in 0..self.step_amount {
                 for e in world.em.entities.clone().into_keys() {
                     if let Some((pos, physical)) = world
@@ -149,7 +157,7 @@ impl<'a> System<'a> for PhysicsManager {
                                     + force / self.step_amount as f32 * delta.as_secs_f32(),
                             );
 
-                            self.check_collisions(entities.clone(), world);
+                            self.check_collisions(world);
 
                             Some(pos)
                         })

@@ -8,6 +8,7 @@ use hex::{
 #[derive(Clone)]
 pub struct Collider {
     pub points: Vec<Vec2>,
+    pub boundary: f32,
     pub layers: Vec<Id>,
     pub ignore: Vec<Id>,
     pub ghost: bool,
@@ -18,6 +19,7 @@ pub struct Collider {
 impl Collider {
     pub fn new(
         points: Vec<Vec2>,
+        boundary: f32,
         layers: Vec<Id>,
         ignore: Vec<Id>,
         ghost: bool,
@@ -25,6 +27,7 @@ impl Collider {
     ) -> Self {
         Self {
             points,
+            boundary,
             layers,
             ignore,
             ghost,
@@ -43,6 +46,7 @@ impl Collider {
                 Vec2::new(dims.x(), dims.y()),
                 Vec2::new(dims.x(), -dims.y()),
             ],
+            (dims / 2.0).magnitude(),
             layer,
             ignore,
             ghost,
@@ -65,6 +69,7 @@ impl Collider {
                 Vec2::new(dims1.x(), -dims1.y()),
                 Vec2::new(0.0, -dims2.y()),
             ],
+            (dims1 / 2.0).magnitude(),
             layers,
             ignore,
             ghost,

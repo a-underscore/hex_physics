@@ -1,6 +1,7 @@
 pub mod collider;
 pub mod physical;
 pub mod physics_manager;
+pub mod quadtree;
 
 pub use collider::Collider;
 pub use physical::Physical;
