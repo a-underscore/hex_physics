@@ -36,7 +36,14 @@ impl Collider {
         }
     }
 
-    pub fn rect(dims: Vec2, layer: Vec<Id>, ignore: Vec<Id>, ghost: bool, active: bool) -> Self {
+    pub fn rect(
+        dims: Vec2,
+        boundary: f32,
+        layer: Vec<Id>,
+        ignore: Vec<Id>,
+        ghost: bool,
+        active: bool,
+    ) -> Self {
         let dims = dims / 2.0;
 
         Self::new(
@@ -46,7 +53,7 @@ impl Collider {
                 Vec2::new(dims.x(), dims.y()),
                 Vec2::new(dims.x(), -dims.y()),
             ],
-            (dims / 2.0).magnitude(),
+            boundary,
             layer,
             ignore,
             ghost,
@@ -54,7 +61,14 @@ impl Collider {
         )
     }
 
-    pub fn oct(dims: Vec2, layers: Vec<Id>, ignore: Vec<Id>, ghost: bool, active: bool) -> Self {
+    pub fn oct(
+        dims: Vec2,
+        boundary: f32,
+        layers: Vec<Id>,
+        ignore: Vec<Id>,
+        ghost: bool,
+        active: bool,
+    ) -> Self {
         let dims1 = dims / 2.0;
         let dims2 = Vec2([dims1.magnitude(); 2]);
 
@@ -69,7 +83,7 @@ impl Collider {
                 Vec2::new(dims1.x(), -dims1.y()),
                 Vec2::new(0.0, -dims2.y()),
             ],
-            (dims1 / 2.0).magnitude(),
+            boundary,
             layers,
             ignore,
             ghost,

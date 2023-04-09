@@ -6,3 +6,4 @@ pub mod quadtree;
 pub use collider::Collider;
 pub use physical::Physical;
 pub use physics_manager::PhysicsManager;
+pub use quadtree::{Box2, QuadTree};

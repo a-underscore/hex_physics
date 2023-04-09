@@ -1,4 +1,4 @@
-use crate::{quadtree::*, Collider, Physical};
+use crate::{Box2, Collider, Physical, QuadTree};
 use hex::{
     anyhow,
     components::Transform,
@@ -74,7 +74,7 @@ impl PhysicsManager {
     }
 
     pub fn check_collisions(&mut self, world: &mut World) {
-        let mut entities: Vec<_> = world
+        let entities: Vec<_> = world
             .em
             .entities
             .keys()
@@ -105,18 +105,21 @@ impl PhysicsManager {
             })
             .collect();
 
-        while let Some((ae, (ac, a_col), (at, a_transform), a_physical)) = entities.pop() {
-            let (boundary, cap) = self.bounds.clone();
-            let mut tree = QuadTree::new(boundary, cap);
+        let mut checked = Vec::new();
+        let (boundary, cap) = self.bounds.clone();
+        let mut tree = QuadTree::new(boundary, cap);
 
-            for e @ (_, _, (_, b_transform), _) in &entities {
-                tree.insert(b_transform.position(), e.clone());
-            }
+        for e @ (_, _, (_, b_transform), _) in &entities {
+            tree.insert(b_transform.position(), e.clone());
+        }
 
-            if let Some(entities) = tree.query(Box2::new(a_transform.position(), a_col.boundary)) {
-                for (be, (bc, b_col), (bt, b_transform), b_physical) in
-                    entities.into_iter().filter_map(|(_, t)| t)
-                {
+        for (ae, (ac, a_col), (at, a_transform), a_physical) in entities {
+            for (be, (bc, b_col), (bt, b_transform), b_physical) in tree
+                .query(Box2::new(a_transform.position(), a_col.boundary))
+                .into_iter()
+                .filter_map(|(_, t)| t)
+            {
+                if !checked.contains(&(ae, be)) && !checked.contains(&(be, ae)) {
                     if let Some((ghost, (atr, btr))) = Self::detect(
                         (&a_col, &a_transform, &a_physical),
                         (&b_col, &b_transform, &b_physical),
@@ -125,6 +128,8 @@ impl PhysicsManager {
                         Self::resolve(ghost, be, ac, at, atr, world);
                     }
                 }
+
+                checked.push((ae, be));
             }
         }
     }

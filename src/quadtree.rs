@@ -72,11 +72,11 @@ where
         self.sw = Some(Box::new(QuadTree::new(sub_boxes.3, self.cap)));
     }
 
-    pub fn query(&mut self, range: Box2) -> Option<Vec<(Vec2, Option<T>)>> {
+    pub fn query(&mut self, range: Box2) -> Vec<(Vec2, Option<T>)> {
         let mut points = Vec::new();
 
         if !self.boundary.intersects(&range) {
-            return None;
+            return points;
         }
 
         for v @ (point, _) in &self.points {
@@ -86,15 +86,39 @@ where
         }
 
         if self.ne.is_none() {
-            return Some(points);
+            return points;
         }
 
-        points.append(&mut self.clone().nw?.query(range.clone())?);
-        points.append(&mut self.clone().ne?.query(range.clone())?);
-        points.append(&mut self.clone().sw?.query(range.clone())?);
-        points.append(&mut self.clone().se?.query(range)?);
+        points.append(
+            &mut self
+                .nw
+                .as_mut()
+                .map(|nw| nw.query(range.clone()))
+                .unwrap_or_default(),
+        );
+        points.append(
+            &mut self
+                .ne
+                .as_mut()
+                .map(|ne| ne.query(range.clone()))
+                .unwrap_or_default(),
+        );
+        points.append(
+            &mut self
+                .sw
+                .as_mut()
+                .map(|sw| sw.query(range.clone()))
+                .unwrap_or_default(),
+        );
+        points.append(
+            &mut self
+                .se
+                .as_mut()
+                .map(|se| se.query(range.clone()))
+                .unwrap_or_default(),
+        );
 
-        Some(points)
+        points
     }
 }
 
