@@ -6,7 +6,11 @@ use hex::{
     glium::glutin::event::Event,
     math::Vec2,
 };
-use std::time::{Duration, Instant};
+use rayon::prelude::*;
+use std::{
+    sync::RwLock,
+    time::{Duration, Instant},
+};
 
 pub type Collision = (bool, (Option<Vec2>, Option<Vec2>));
 pub type Colliders = Vec<(Id, (Id, Collider), Id, Option<Physical>)>;
@@ -105,7 +109,6 @@ impl PhysicsManager {
             })
             .collect();
 
-        let mut checked = Vec::new();
         let (boundary, cap) = self.bounds.clone();
         let mut tree = QuadTree::new(boundary, cap);
 
@@ -113,24 +116,48 @@ impl PhysicsManager {
             tree.insert(b_transform.position(), e.clone());
         }
 
-        for (ae, (ac, a_col), (at, a_transform), a_physical) in entities {
-            for (be, (bc, b_col), (bt, b_transform), b_physical) in tree
-                .query(Box2::new(a_transform.position(), a_col.boundary))
-                .into_iter()
-                .filter_map(|(_, t)| t)
-            {
-                if !checked.contains(&(ae, be)) && !checked.contains(&(be, ae)) {
-                    if let Some((ghost, (atr, btr))) = Self::detect(
-                        (&a_col, &a_transform, &a_physical),
-                        (&b_col, &b_transform, &b_physical),
-                    ) {
-                        Self::resolve(ghost, ae, bc, bt, btr, world);
-                        Self::resolve(ghost, be, ac, at, atr, world);
-                    }
-                }
+        let checked = RwLock::new(Vec::new());
+        let tree = RwLock::new(tree);
 
-                checked.push((ae, be));
-            }
+        for ((ae, ac, at), (be, bc, bt), (ghost, (atr, btr))) in entities
+            .par_iter()
+            .cloned()
+            .filter_map(|(ae, (ac, a_col), (at, a_transform), a_physical)| {
+                Some(
+                    tree.read()
+                        .ok()?
+                        .query(Box2::new(a_transform.position(), a_col.boundary))
+                        .into_iter()
+                        .filter_map(|(_, t)| t)
+                        .filter_map(|(be, (bc, b_col), (bt, b_transform), b_physical)| {
+                            let res = {
+                                let checked = checked.read().ok()?;
+                                if !checked.contains(&(ae, be)) && !checked.contains(&(be, ae)) {
+                                    Some((
+                                        (ae, ac, at),
+                                        (be, bc, bt),
+                                        Self::detect(
+                                            (&a_col, &a_transform, &a_physical),
+                                            (&b_col, &b_transform, &b_physical),
+                                        )?,
+                                    ))
+                                } else {
+                                    None
+                                }
+                            };
+
+                            checked.write().ok()?.push((ae, be));
+
+                            res
+                        })
+                        .collect::<Vec<_>>(),
+                )
+            })
+            .flatten()
+            .collect::<Vec<_>>()
+        {
+            Self::resolve(ghost, ae, bc, bt, btr, world);
+            Self::resolve(ghost, be, ac, at, atr, world);
         }
     }
 }

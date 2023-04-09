@@ -72,7 +72,7 @@ where
         self.sw = Some(Box::new(QuadTree::new(sub_boxes.3, self.cap)));
     }
 
-    pub fn query(&mut self, range: Box2) -> Vec<(Vec2, Option<T>)> {
+    pub fn query(&self, range: Box2) -> Vec<(Vec2, Option<T>)> {
         let mut points = Vec::new();
 
         if !self.boundary.intersects(&range) {
@@ -92,28 +92,28 @@ where
         points.append(
             &mut self
                 .nw
-                .as_mut()
+                .as_ref()
                 .map(|nw| nw.query(range.clone()))
                 .unwrap_or_default(),
         );
         points.append(
             &mut self
                 .ne
-                .as_mut()
+                .as_ref()
                 .map(|ne| ne.query(range.clone()))
                 .unwrap_or_default(),
         );
         points.append(
             &mut self
                 .sw
-                .as_mut()
+                .as_ref()
                 .map(|sw| sw.query(range.clone()))
                 .unwrap_or_default(),
         );
         points.append(
             &mut self
                 .se
-                .as_mut()
+                .as_ref()
                 .map(|se| se.query(range.clone()))
                 .unwrap_or_default(),
         );
