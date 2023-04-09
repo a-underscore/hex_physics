@@ -27,13 +27,9 @@ impl PhysicsManager {
     }
 
     pub fn detect(
-        (ac, at, ap): (&Collider, Id, &Option<Physical>),
-        (bc, bt, bp): (&Collider, Id, &Option<Physical>),
-        world: &mut World,
+        (ac, at, ap): (&Collider, &Transform, &Option<Physical>),
+        (bc, bt, bp): (&Collider, &Transform, &Option<Physical>),
     ) -> Option<Collision> {
-        let at = world.cm.get_cache::<Transform>(at)?;
-        let bt = world.cm.get_cache::<Transform>(bt)?;
-
         if ac.layers.iter().any(|a| bc.layers.contains(a))
             && !ac.ignore.iter().any(|a| bc.layers.contains(a))
             && !bc.ignore.iter().any(|b| ac.layers.contains(b))
@@ -79,12 +75,17 @@ impl PhysicsManager {
 
     pub fn check_collisions(&mut self, mut entities: Colliders, world: &mut World) {
         while let Some((ae, (ac, a_col), at, a_physical)) = entities.pop() {
-            for (be, (bc, b_col), bt, b_physical) in &entities {
-                if let Some((ghost, (atr, btr))) =
-                    Self::detect((&a_col, at, &a_physical), (b_col, *bt, b_physical), world)
-                {
-                    Self::resolve(ghost, ae, *bc, *bt, btr, world);
-                    Self::resolve(ghost, *be, ac, at, atr, world);
+            if let Some(a_transform) = world.cm.get_cache::<Transform>(at).cloned() {
+                for (be, (bc, b_col), bt, b_physical) in &entities {
+                    if let Some(b_transform) = world.cm.get_cache::<Transform>(*bt).cloned() {
+                        if let Some((ghost, (atr, btr))) = Self::detect(
+                            (&a_col, &a_transform, &a_physical),
+                            (b_col, &b_transform, b_physical),
+                        ) {
+                            Self::resolve(ghost, ae, *bc, *bt, btr, world);
+                            Self::resolve(ghost, *be, ac, at, atr, world);
+                        }
+                    }
                 }
             }
         }
