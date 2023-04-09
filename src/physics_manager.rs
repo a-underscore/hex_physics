@@ -12,14 +12,14 @@ pub type Collision = (bool, (Option<Vec2>, Option<Vec2>));
 pub type Colliders = Vec<(Id, (Id, Collider), Id, Option<Physical>)>;
 
 pub struct PhysicsManager {
-    pub step_amount: Id,
+    pub step_amount: usize,
     pub max_delta: Duration,
     pub bounds: (Box2, usize),
     frame: Instant,
 }
 
 impl PhysicsManager {
-    pub fn new(step_amount: Id, max_delta: Duration, bounds: (Box2, usize)) -> Self {
+    pub fn new(step_amount: usize, max_delta: Duration, bounds: (Box2, usize)) -> Self {
         Self {
             step_amount,
             max_delta,
