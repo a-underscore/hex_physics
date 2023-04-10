@@ -129,6 +129,7 @@ impl PhysicsManager {
 
                                         !checked.contains(&(ae, be)) && !checked.contains(&(be, ae))
                                     };
+
                                     if res {
                                         Some((
                                             (ae, ac, at),
