@@ -77,6 +77,8 @@ impl PhysicsManager {
     }
 
     pub fn check_collisions(&mut self, (em, cm): (&EntityManager, &mut ComponentManager)) {
+        let (boundary, cap) = self.bounds.clone();
+        let tree = RwLock::new(QuadTree::new(boundary, cap));
         let entities: Vec<_> = em
             .entities
             .keys()
@@ -99,14 +101,15 @@ impl PhysicsManager {
                     cm.get::<Physical>(e, em).cloned(),
                 ))
             })
-            .collect();
-
-        let (boundary, cap) = self.bounds.clone();
-        let mut tree = QuadTree::new(boundary, cap);
-
-        for e @ (_, _, (_, b_transform), _) in &entities {
-            tree.insert(b_transform.position(), e.clone());
-        }
+            .collect::<Vec<_>>()
+            .into_par_iter()
+            .filter_map(|ref e @ (_, _, (_, ref b_transform), _)| {
+                tree.write()
+                    .ok()?
+                    .insert(b_transform.position(), e.clone())
+                    .then_some(e.clone())
+            })
+            .collect::<Vec<_>>();
 
         let checked = RwLock::new(Vec::new());
 
@@ -115,13 +118,18 @@ impl PhysicsManager {
             .cloned()
             .filter_map(|(ae, (ac, a_col), (at, a_transform), a_physical)| {
                 Some(
-                    tree.query(Box2::new(a_transform.position(), a_col.boundary))
+                    tree.read()
+                        .ok()?
+                        .query(Box2::new(a_transform.position(), a_col.boundary))
                         .into_iter()
                         .filter_map(|(_, t)| t)
                         .filter_map(|(be, (bc, b_col), (bt, b_transform), b_physical)| {
                             let res = {
-                                let checked = checked.read().ok()?;
-                                if !checked.contains(&(ae, be)) && !checked.contains(&(be, ae)) {
+                                if {
+                                    let checked = checked.read().ok()?;
+
+                                    !checked.contains(&(ae, be)) && !checked.contains(&(be, ae))
+                                } {
                                     Some((
                                         (ae, ac, at),
                                         (be, bc, bt),
