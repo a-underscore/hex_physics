@@ -172,7 +172,7 @@ impl<'a> System<'a> for PhysicsManager {
             self.frame = now;
 
             for _ in 0..self.step_amount {
-                for e in world.em.entities.clone().into_keys() {
+                for e in world.em.entities.keys().cloned().collect::<Vec<_>>() {
                     if let Some((pos, physical)) = world
                         .cm
                         .get_mut::<Physical>(e, &world.em)
