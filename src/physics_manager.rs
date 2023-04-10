@@ -2,7 +2,7 @@ use crate::{Box2, Collider, Physical, QuadTree};
 use hex::{
     anyhow,
     components::Transform,
-    ecs::{ev::Control, system_manager::System, Ev, Id, Scene, World},
+    ecs::{ev::Control, system_manager::System, ComponentManager, EntityManager, Ev, Id, Scene},
     glium::glutin::event::Event,
     math::Vec2,
 };
@@ -44,8 +44,8 @@ impl PhysicsManager {
                 return Some((
                     ac.ghost || bc.ghost,
                     (
-                        ap.clone().map(|_| -min_translation),
-                        bp.clone().map(|_| min_translation),
+                        ap.as_ref().map(|_| -min_translation),
+                        bp.as_ref().map(|_| min_translation),
                     ),
                 ));
             }
@@ -60,10 +60,9 @@ impl PhysicsManager {
         cache_collider: Id,
         cache_transform: Id,
         tr: Option<Vec2>,
-        world: &mut World,
+        cm: &mut ComponentManager,
     ) {
-        if let Some(collider) = world
-            .cm
+        if let Some(collider) = cm
             .get_cache_mut::<Collider>(cache_collider)
             .and_then(|c| (!c.collisions.contains(&other_e)).then_some(c))
         {
@@ -71,40 +70,33 @@ impl PhysicsManager {
         }
 
         if let Some((tr, t)) = tr.and_then(|tr| {
-            (!ghost_col).then_some((tr, world.cm.get_cache_mut::<Transform>(cache_transform)?))
+            (!ghost_col).then_some((tr, cm.get_cache_mut::<Transform>(cache_transform)?))
         }) {
             t.set_position(t.position() + tr);
         }
     }
 
-    pub fn check_collisions(&mut self, world: &mut World) {
-        let entities: Vec<_> = world
-            .em
+    pub fn check_collisions(&mut self, (em, cm): (&EntityManager, &mut ComponentManager)) {
+        let entities: Vec<_> = em
             .entities
             .keys()
             .cloned()
             .filter_map(|e| {
                 Some((
                     e,
-                    world
-                        .cm
-                        .get_cache_id::<Collider>(e, &world.em)
-                        .and_then(|c| {
-                            world.cm.get_cache_mut::<Collider>(c).and_then(|col| {
-                                col.collisions.clear();
+                    cm.get_cache_id::<Collider>(e, &em).and_then(|c| {
+                        cm.get_cache_mut::<Collider>(c).and_then(|col| {
+                            col.collisions.clear();
 
-                                col.active.then(|| (c, col.clone()))
-                            })
-                        })?,
-                    world
-                        .cm
-                        .get_cache_id::<Transform>(e, &world.em)
-                        .and_then(|t| {
-                            world.cm.get_cache::<Transform>(t).and_then(|transform| {
-                                transform.active.then_some((t, transform.clone()))
-                            })
-                        })?,
-                    world.cm.get::<Physical>(e, &world.em).cloned(),
+                            col.active.then(|| (c, col.clone()))
+                        })
+                    })?,
+                    cm.get_cache_id::<Transform>(e, &em).and_then(|t| {
+                        cm.get_cache::<Transform>(t).and_then(|transform| {
+                            transform.active.then_some((t, transform.clone()))
+                        })
+                    })?,
+                    cm.get::<Physical>(e, &em).cloned(),
                 ))
             })
             .collect();
@@ -153,14 +145,19 @@ impl PhysicsManager {
             .flatten()
             .collect::<Vec<_>>()
         {
-            Self::resolve(ghost, ae, bc, bt, btr, world);
-            Self::resolve(ghost, be, ac, at, atr, world);
+            Self::resolve(ghost, ae, bc, bt, btr, cm);
+            Self::resolve(ghost, be, ac, at, atr, cm);
         }
     }
 }
 
 impl<'a> System<'a> for PhysicsManager {
-    fn update(&mut self, ev: &mut Ev, _: &mut Scene, world: &mut World) -> anyhow::Result<()> {
+    fn update(
+        &mut self,
+        ev: &mut Ev,
+        _: &mut Scene,
+        (em, cm): (&mut EntityManager, &mut ComponentManager),
+    ) -> anyhow::Result<()> {
         if let Ev::Event(Control {
             event: Event::MainEventsCleared,
             flow: _,
@@ -172,13 +169,13 @@ impl<'a> System<'a> for PhysicsManager {
             self.frame = now;
 
             for _ in 0..self.step_amount {
-                for e in world.em.entities.clone().into_keys() {
-                    if let Some((pos, physical)) = world
-                        .cm
-                        .get_mut::<Physical>(e, &world.em)
-                        .and_then(|p| p.active.then_some(p.force))
-                        .and_then(|force| {
-                            let t = world.cm.get_mut::<Transform>(e, &world.em)?;
+                for e in em.entities.keys().cloned() {
+                    if let Some((pos, physical)) = cm
+                        .get::<Physical>(e, &em)
+                        .cloned()
+                        .and_then(|p| {
+                            let force = p.active.then_some(p.force)?;
+                            let t = cm.get_mut::<Transform>(e, &em)?;
                             let pos = t.position();
 
                             t.set_position(
@@ -186,11 +183,11 @@ impl<'a> System<'a> for PhysicsManager {
                                     + force / self.step_amount as f32 * delta.as_secs_f32(),
                             );
 
-                            self.check_collisions(world);
+                            self.check_collisions((em, cm));
 
                             Some(pos)
                         })
-                        .and_then(|pos| Some((pos, world.cm.get_mut::<Physical>(e, &world.em)?)))
+                        .and_then(|pos| Some((pos, cm.get_mut::<Physical>(e, &em)?)))
                     {
                         if let Some(vel) = physical
                             .last_position()
