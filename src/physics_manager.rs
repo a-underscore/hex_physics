@@ -84,19 +84,19 @@ impl PhysicsManager {
             .filter_map(|e| {
                 Some((
                     e,
-                    cm.get_cache_id::<Collider>(e, &em).and_then(|c| {
+                    cm.get_cache_id::<Collider>(e, em).and_then(|c| {
                         cm.get_cache_mut::<Collider>(c).and_then(|col| {
                             col.collisions.clear();
 
                             col.active.then(|| (c, col.clone()))
                         })
                     })?,
-                    cm.get_cache_id::<Transform>(e, &em).and_then(|t| {
+                    cm.get_cache_id::<Transform>(e, em).and_then(|t| {
                         cm.get_cache::<Transform>(t).and_then(|transform| {
                             transform.active.then_some((t, transform.clone()))
                         })
                     })?,
-                    cm.get::<Physical>(e, &em).cloned(),
+                    cm.get::<Physical>(e, em).cloned(),
                 ))
             })
             .collect();
@@ -171,11 +171,11 @@ impl<'a> System<'a> for PhysicsManager {
             for _ in 0..self.step_amount {
                 for e in em.entities.keys().cloned() {
                     if let Some((pos, physical)) = cm
-                        .get::<Physical>(e, &em)
+                        .get::<Physical>(e, em)
                         .cloned()
                         .and_then(|p| {
                             let force = p.active.then_some(p.force)?;
-                            let t = cm.get_mut::<Transform>(e, &em)?;
+                            let t = cm.get_mut::<Transform>(e, em)?;
                             let pos = t.position();
 
                             t.set_position(
@@ -187,7 +187,7 @@ impl<'a> System<'a> for PhysicsManager {
 
                             Some(pos)
                         })
-                        .and_then(|pos| Some((pos, cm.get_mut::<Physical>(e, &em)?)))
+                        .and_then(|pos| Some((pos, cm.get_mut::<Physical>(e, em)?)))
                     {
                         if let Some(vel) = physical
                             .last_position()
