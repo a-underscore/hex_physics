@@ -131,7 +131,7 @@ impl PhysicsManager {
                                         (*be, *bc, *bt),
                                         Self::detect(
                                             (&a_col, &a_transform, &a_physical),
-                                            (&b_col, &b_transform, &b_physical),
+                                            (b_col, b_transform, b_physical),
                                         )?,
                                     ))
                                 } else {
