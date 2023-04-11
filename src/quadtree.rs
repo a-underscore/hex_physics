@@ -1,20 +1,18 @@
-use hex::math::Vec2;
+use hex::{ecs::Id, math::Vec2};
+use std::sync::Arc;
 
 #[derive(Default, Clone)]
 pub struct QuadTree<T> {
     pub boundary: Box2,
     pub cap: usize,
-    pub points: Vec<(Vec2, Option<T>)>,
+    pub points: Vec<((Vec2, Id), Arc<T>)>,
     pub nw: Option<Box<Self>>,
     pub ne: Option<Box<Self>>,
     pub se: Option<Box<Self>>,
     pub sw: Option<Box<Self>>,
 }
 
-impl<T> QuadTree<T>
-where
-    T: Clone,
-{
+impl<T> QuadTree<T> {
     pub fn new(boundary: Box2, cap: usize) -> Self {
         Self {
             boundary,
@@ -27,13 +25,13 @@ where
         }
     }
 
-    pub fn insert(&mut self, point: Vec2, t: T) -> bool {
-        if !self.boundary.contains(point) {
+    pub fn insert(&mut self, v @ (p, _): (Vec2, Id), t: Arc<T>) -> bool {
+        if !self.boundary.contains(p) {
             return false;
         }
 
         if self.points.len() < self.cap && self.ne.is_none() {
-            self.points.push((point, Some(t)));
+            self.points.push((v, t));
 
             return true;
         }
@@ -44,22 +42,22 @@ where
 
         self.nw
             .as_mut()
-            .map(|nw| nw.insert(point, t.clone()))
+            .map(|nw| nw.insert(v, t.clone()))
             .unwrap_or_default()
             || self
                 .ne
                 .as_mut()
-                .map(|ne| ne.insert(point, t.clone()))
+                .map(|ne| ne.insert(v, t.clone()))
                 .unwrap_or_default()
             || self
                 .sw
                 .as_mut()
-                .map(|sw| sw.insert(point, t.clone()))
+                .map(|sw| sw.insert(v, t.clone()))
                 .unwrap_or_default()
             || self
                 .se
                 .as_mut()
-                .map(|se| se.insert(point, t.clone()))
+                .map(|se| se.insert(v, t.clone()))
                 .unwrap_or_default()
     }
 
@@ -72,15 +70,15 @@ where
         self.sw = Some(Box::new(QuadTree::new(sub_boxes.3, self.cap)));
     }
 
-    pub fn query(&self, range: Box2) -> Vec<(Vec2, Option<T>)> {
+    pub fn query(&self, range: Box2) -> Vec<((Vec2, Id), Arc<T>)> {
         let mut points = Vec::new();
 
         if !self.boundary.intersects(&range) {
             return points;
         }
 
-        for v @ (point, _) in &self.points {
-            if range.contains(*point) {
+        for v @ ((p, _), _) in &self.points {
+            if range.contains(*p) {
                 points.push(v.clone());
             }
         }

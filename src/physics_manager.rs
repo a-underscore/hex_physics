@@ -8,7 +8,7 @@ use hex::{
 };
 use rayon::prelude::*;
 use std::{
-    sync::RwLock,
+    sync::{Arc, RwLock},
     time::{Duration, Instant},
 };
 
@@ -101,8 +101,8 @@ impl PhysicsManager {
                     cm.get::<Physical>(e, em).cloned(),
                 ))
             })
-            .filter_map(|ref e @ (_, _, (_, ref b_transform), _)| {
-                tree.insert(b_transform.position(), e.clone())
+            .filter_map(|ref e @ (be, _, (_, ref b_transform), _)| {
+                tree.insert((b_transform.position(), be), Arc::new(e.clone()))
                     .then_some(e.clone())
             })
             .collect();
@@ -116,19 +116,19 @@ impl PhysicsManager {
                 Some(
                     tree.query(Box2::new(a_transform.position(), a_col.boundary))
                         .into_iter()
-                        .filter_map(|(_, t)| t)
-                        .filter_map(|(be, (bc, b_col), (bt, b_transform), b_physical)| {
+                        .filter_map(|(_, a)| {
+                            let (be, (bc, b_col), (bt, b_transform), b_physical) = &*a;
                             let res = {
                                 let res = {
                                     let checked = checked.read().ok()?;
 
-                                    !checked.contains(&(ae, be)) && !checked.contains(&(be, ae))
+                                    !checked.contains(&(ae, *be)) && !checked.contains(&(*be, ae))
                                 };
 
                                 if res {
                                     Some((
                                         (ae, ac, at),
-                                        (be, bc, bt),
+                                        (*be, *bc, *bt),
                                         Self::detect(
                                             (&a_col, &a_transform, &a_physical),
                                             (&b_col, &b_transform, &b_physical),
@@ -139,7 +139,7 @@ impl PhysicsManager {
                                 }
                             };
 
-                            checked.write().ok()?.push((ae, be));
+                            checked.write().ok()?.push((ae, *be));
 
                             res
                         })
