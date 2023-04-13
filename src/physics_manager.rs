@@ -16,18 +16,18 @@ pub type Collision = (bool, (Option<Vec2>, Option<Vec2>));
 pub type Colliders = Vec<(Id, (Id, Collider), Id, Option<Physical>)>;
 
 pub struct PhysicsManager {
-    pub rate: usize,
-    pub step_amount: usize,
+    pub rate: u32,
+    pub step_amount: u32,
     pub max_delta: Option<Duration>,
     pub bounds: (Box2, usize),
     frame: Instant,
-    count: usize,
+    count: u32,
 }
 
 impl PhysicsManager {
     pub fn new(
-        rate: usize,
-        step_amount: usize,
+        rate: u32,
+        step_amount: u32,
         max_delta: Option<Duration>,
         bounds: (Box2, usize),
     ) -> Self {
@@ -177,9 +177,7 @@ impl PhysicsManager {
                     let t = cm.get_mut::<Transform>(e, em)?;
                     let pos = t.position();
 
-                    t.set_position(
-                        t.position() + force / self.step_amount as f32 * delta.as_secs_f32(),
-                    );
+                    t.set_position(t.position() + force * delta.as_secs_f32());
 
                     Some(pos)
                 })
@@ -227,7 +225,7 @@ impl<'a> System<'a> for PhysicsManager {
                 self.count = 0;
 
                 for _ in 0..self.step_amount {
-                    self.update_positions(delta, (em, cm));
+                    self.update_positions(delta / self.step_amount, (em, cm));
                     self.check_collisions((em, cm));
                 }
             } else {
