@@ -34,6 +34,7 @@ impl PhysicsManager {
             step_amount,
             rate,
             bounds,
+            max_delta,
             frame: Instant::now(),
         }
     }
