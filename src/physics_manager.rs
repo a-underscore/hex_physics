@@ -17,16 +17,22 @@ pub type Colliders = Vec<(Id, (Id, Collider), Id, Option<Physical>)>;
 
 pub struct PhysicsManager {
     pub step_amount: usize,
+    pub rate: Option<Duration>,
     pub max_delta: Option<Duration>,
     pub bounds: (Box2, usize),
     frame: Instant,
 }
 
 impl PhysicsManager {
-    pub fn new(step_amount: usize, max_delta: Option<Duration>, bounds: (Box2, usize)) -> Self {
+    pub fn new(
+        step_amount: usize,
+        rate: Option<Duration>,
+        max_delta: Option<Duration>,
+        bounds: (Box2, usize),
+    ) -> Self {
         Self {
             step_amount,
-            max_delta,
+            rate,
             bounds,
             frame: Instant::now(),
         }
@@ -178,37 +184,39 @@ impl<'a> System<'a> for PhysicsManager {
                 }
             };
 
-            self.frame = now;
+            if self.rate.map(|r| delta >= r).unwrap_or(true) {
+                self.frame = now;
 
-            for _ in 0..self.step_amount {
-                for e in em.entities.keys().cloned() {
-                    if let Some((pos, physical)) = cm
-                        .get::<Physical>(e, em)
-                        .cloned()
-                        .and_then(|p| {
-                            let force = p.active.then_some(p.force)?;
-                            let t = cm.get_mut::<Transform>(e, em)?;
-                            let pos = t.position();
+                for _ in 0..self.step_amount {
+                    for e in em.entities.keys().cloned() {
+                        if let Some((pos, physical)) = cm
+                            .get::<Physical>(e, em)
+                            .cloned()
+                            .and_then(|p| {
+                                let force = p.active.then_some(p.force)?;
+                                let t = cm.get_mut::<Transform>(e, em)?;
+                                let pos = t.position();
 
-                            t.set_position(
-                                t.position()
-                                    + force / self.step_amount as f32 * delta.as_secs_f32(),
-                            );
+                                t.set_position(
+                                    t.position()
+                                        + force / self.step_amount as f32 * delta.as_secs_f32(),
+                                );
 
-                            self.check_collisions((em, cm));
+                                self.check_collisions((em, cm));
 
-                            Some(pos)
-                        })
-                        .and_then(|pos| Some((pos, cm.get_mut::<Physical>(e, em)?)))
-                    {
-                        if let Some(vel) = physical
-                            .last_position()
-                            .map(|l| (pos - l) / delta.as_secs_f32())
+                                Some(pos)
+                            })
+                            .and_then(|pos| Some((pos, cm.get_mut::<Physical>(e, em)?)))
                         {
-                            physical.set_velocity(vel);
-                        }
+                            if let Some(vel) = physical
+                                .last_position()
+                                .map(|l| (pos - l) / delta.as_secs_f32())
+                            {
+                                physical.set_velocity(vel);
+                            }
 
-                        physical.set_last_position(pos);
+                            physical.set_last_position(pos);
+                        }
                     }
                 }
             }
