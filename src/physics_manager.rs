@@ -17,13 +17,13 @@ pub type Colliders = Vec<(Id, (Id, Collider), Id, Option<Physical>)>;
 
 pub struct PhysicsManager {
     pub step_amount: usize,
-    pub max_delta: Duration,
+    pub max_delta: Option<Duration>,
     pub bounds: (Box2, usize),
     frame: Instant,
 }
 
 impl PhysicsManager {
-    pub fn new(step_amount: usize, max_delta: Duration, bounds: (Box2, usize)) -> Self {
+    pub fn new(step_amount: usize, max_delta: Option<Duration>, bounds: (Box2, usize)) -> Self {
         Self {
             step_amount,
             max_delta,
@@ -168,7 +168,15 @@ impl<'a> System<'a> for PhysicsManager {
         }) = ev
         {
             let now = Instant::now();
-            let delta = now.duration_since(self.frame).min(self.max_delta);
+            let delta = {
+                let delta = now.duration_since(self.frame);
+
+                if let Some(md) = self.max_delta {
+                    delta.min(md)
+                } else {
+                    delta
+                }
+            };
 
             self.frame = now;
 
