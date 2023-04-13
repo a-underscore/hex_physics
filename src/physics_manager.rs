@@ -16,26 +16,28 @@ pub type Collision = (bool, (Option<Vec2>, Option<Vec2>));
 pub type Colliders = Vec<(Id, (Id, Collider), Id, Option<Physical>)>;
 
 pub struct PhysicsManager {
+    pub rate: usize,
     pub step_amount: usize,
-    pub rate: Option<Duration>,
     pub max_delta: Option<Duration>,
     pub bounds: (Box2, usize),
     frame: Instant,
+    count: usize,
 }
 
 impl PhysicsManager {
     pub fn new(
+        rate: usize,
         step_amount: usize,
-        rate: Option<Duration>,
         max_delta: Option<Duration>,
         bounds: (Box2, usize),
     ) -> Self {
         Self {
-            step_amount,
             rate,
+            step_amount,
             bounds,
             max_delta,
             frame: Instant::now(),
+            count: 0,
         }
     }
 
@@ -174,19 +176,20 @@ impl<'a> System<'a> for PhysicsManager {
             flow: _,
         }) = ev
         {
-            let now = Instant::now();
-            let delta = {
-                let delta = now.duration_since(self.frame);
+            if self.count >= self.rate {
+                let now = Instant::now();
+                let delta = {
+                    let delta = now.duration_since(self.frame);
 
-                if let Some(md) = self.max_delta {
-                    delta.min(md)
-                } else {
-                    delta
-                }
-            };
+                    if let Some(md) = self.max_delta {
+                        delta.min(md)
+                    } else {
+                        delta
+                    }
+                };
 
-            if self.rate.map(|r| delta >= r).unwrap_or(true) {
                 self.frame = now;
+                self.count = 0;
 
                 for _ in 0..self.step_amount {
                     for e in em.entities.keys().cloned() {
@@ -220,6 +223,8 @@ impl<'a> System<'a> for PhysicsManager {
                         }
                     }
                 }
+            } else {
+                self.count += 1;
             }
         }
 
