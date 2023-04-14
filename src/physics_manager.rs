@@ -178,7 +178,7 @@ impl PhysicsManager {
                     let pos = t.position();
 
                     t.set_position(
-                        t.position() + (force * delta.as_secs_f32()) / step_amount as f32,
+                        (t.position() + force * delta.as_secs_f32()) / step_amount as f32,
                     );
 
                     Some(pos)
