@@ -164,7 +164,7 @@ impl PhysicsManager {
     }
 
     pub fn update_positions(
-        &mut self,
+        step_amount: u32,
         delta: Duration,
         (em, cm): (&mut EntityManager, &mut ComponentManager),
     ) {
@@ -177,7 +177,7 @@ impl PhysicsManager {
                     let t = cm.get_mut::<Transform>(e, em)?;
                     let pos = t.position();
 
-                    t.set_position(t.position() + force * delta.as_secs_f32());
+                    t.set_position(t.position() + force / step_amount as f32 * delta.as_secs_f32());
 
                     Some(pos)
                 })
@@ -225,13 +225,14 @@ impl<'a> System<'a> for PhysicsManager {
                 self.count = 0;
 
                 for _ in 0..self.step_amount {
-                    self.update_positions(delta / self.step_amount, (em, cm));
+                    Self::update_positions(self.step_amount, delta, (em, cm));
+
                     self.check_collisions((em, cm));
                 }
             } else {
                 self.count += 1;
 
-                self.update_positions(delta, (em, cm));
+                Self::update_positions(1, delta, (em, cm));
             }
         }
 
