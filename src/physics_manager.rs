@@ -177,7 +177,9 @@ impl PhysicsManager {
                     let t = cm.get_mut::<Transform>(e, em)?;
                     let pos = t.position();
 
-                    t.set_position(t.position() + force / step_amount as f32 * delta.as_secs_f32());
+                    t.set_position(
+                        t.position() + (force * delta.as_secs_f32()) / step_amount as f32,
+                    );
 
                     Some(pos)
                 })
