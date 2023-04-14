@@ -85,7 +85,7 @@ impl PhysicsManager {
         }
     }
 
-    pub fn check_collisions(&mut self, (em, cm): (&EntityManager, &mut ComponentManager)) {
+    pub fn check_collisions(&self, (em, cm): (&EntityManager, &mut ComponentManager)) {
         let (boundary, cap) = self.bounds.clone();
         let mut tree = QuadTree::new(boundary, cap);
         let entities: Vec<_> = em
@@ -164,7 +164,8 @@ impl PhysicsManager {
     }
 
     pub fn update_positions(
-        step_amount: u32,
+        &self,
+        step_amount: Option<u32>,
         delta: Duration,
         (em, cm): (&mut EntityManager, &mut ComponentManager),
     ) {
@@ -177,9 +178,15 @@ impl PhysicsManager {
                     let t = cm.get_mut::<Transform>(e, em)?;
                     let pos = t.position();
 
-                    t.set_position(
-                        (t.position() + force * delta.as_secs_f32()) / step_amount as f32,
-                    );
+                    if let Some(step_amount) = step_amount {
+                        t.set_position(
+                            t.position() + force / step_amount as f32 * delta.as_secs_f32(),
+                        );
+
+                        self.check_collisions((em, cm));
+                    } else {
+                        t.set_position(t.position() + force * delta.as_secs_f32());
+                    }
 
                     Some(pos)
                 })
@@ -227,15 +234,13 @@ impl<'a> System<'a> for PhysicsManager {
                 self.count = 0;
 
                 for _ in 0..self.step_amount {
-                    Self::update_positions(self.step_amount, delta, (em, cm));
-
-                    self.check_collisions((em, cm));
+                    self.update_positions(Some(self.step_amount), delta, (em, cm));
                 }
             } else {
-                self.count += 1;
-
-                Self::update_positions(1, delta, (em, cm));
+                self.update_positions(None, delta, (em, cm));
             }
+
+            self.count += 1;
         }
 
         Ok(())
