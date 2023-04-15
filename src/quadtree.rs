@@ -1,11 +1,11 @@
-use hex::{ecs::Id, math::Vec2};
+use hex::{ecs::Id, math::Vec2d};
 use std::sync::Arc;
 
 #[derive(Default, Clone)]
 pub struct QuadTree<T> {
-    pub boundary: Box2,
+    pub boundary: Box2d,
     pub cap: usize,
-    pub points: Vec<((Vec2, Id), Arc<T>)>,
+    pub points: Vec<((Vec2d, Id), Arc<T>)>,
     pub nw: Option<Box<Self>>,
     pub ne: Option<Box<Self>>,
     pub se: Option<Box<Self>>,
@@ -13,7 +13,7 @@ pub struct QuadTree<T> {
 }
 
 impl<T> QuadTree<T> {
-    pub fn new(boundary: Box2, cap: usize) -> Self {
+    pub fn new(boundary: Box2d, cap: usize) -> Self {
         Self {
             boundary,
             cap,
@@ -25,7 +25,7 @@ impl<T> QuadTree<T> {
         }
     }
 
-    pub fn insert(&mut self, v @ (p, _): (Vec2, Id), t: Arc<T>) -> bool {
+    pub fn insert(&mut self, v @ (p, _): (Vec2d, Id), t: Arc<T>) -> bool {
         if !self.boundary.contains(p) {
             return false;
         }
@@ -70,7 +70,7 @@ impl<T> QuadTree<T> {
         self.sw = Some(Box::new(QuadTree::new(sub_boxes.3, self.cap)));
     }
 
-    pub fn query(&self, range: Box2) -> Vec<((Vec2, Id), Arc<T>)> {
+    pub fn query(&self, range: Box2d) -> Vec<((Vec2d, Id), Arc<T>)> {
         let mut points = Vec::new();
 
         if !self.boundary.intersects(&range) {
@@ -121,17 +121,17 @@ impl<T> QuadTree<T> {
 }
 
 #[derive(Clone, Default)]
-pub struct Box2 {
-    pub center: Vec2,
+pub struct Box2d {
+    pub center: Vec2d,
     pub half: f32,
 }
 
-impl Box2 {
-    pub fn new(center: Vec2, half: f32) -> Self {
+impl Box2d {
+    pub fn new(center: Vec2d, half: f32) -> Self {
         Self { center, half }
     }
 
-    pub fn contains(&self, point: Vec2) -> bool {
+    pub fn contains(&self, point: Vec2d) -> bool {
         point.x() >= self.center.x() - self.half
             && point.x() <= self.center.x() + self.half
             && point.y() >= self.center.y() - self.half
@@ -145,24 +145,24 @@ impl Box2 {
             && self.center.y() + self.half >= other.center.y() - other.half
     }
 
-    pub fn subdivide(&self) -> (Box2, Box2, Box2, Box2) {
+    pub fn subdivide(&self) -> (Box2d, Box2d, Box2d, Box2d) {
         let half = self.half / 2.0;
 
         (
-            Box2::new(
-                Vec2::new(self.center.x() - half, self.center.y() + half),
+            Box2d::new(
+                Vec2d::new(self.center.x() - half, self.center.y() + half),
                 half,
             ),
-            Box2::new(
-                Vec2::new(self.center.x() + half, self.center.y() + half),
+            Box2d::new(
+                Vec2d::new(self.center.x() + half, self.center.y() + half),
                 half,
             ),
-            Box2::new(
-                Vec2::new(self.center.x() + half, self.center.y() - half),
+            Box2d::new(
+                Vec2d::new(self.center.x() + half, self.center.y() - half),
                 half,
             ),
-            Box2::new(
-                Vec2::new(self.center.x() - half, self.center.y() - half),
+            Box2d::new(
+                Vec2d::new(self.center.x() - half, self.center.y() - half),
                 half,
             ),
         )

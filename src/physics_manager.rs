@@ -1,10 +1,10 @@
-use crate::{Box2, Collider, Physical, QuadTree};
+use crate::{Box2d, Collider, Physical, QuadTree};
 use hex::{
     anyhow,
     components::Transform,
     ecs::{ev::Control, system_manager::System, ComponentManager, EntityManager, Ev, Id, Scene},
     glium::glutin::event::Event,
-    math::Vec2,
+    math::Vec2d,
 };
 use rayon::prelude::*;
 use std::{
@@ -12,14 +12,14 @@ use std::{
     time::{Duration, Instant},
 };
 
-pub type Collision = (bool, (Option<Vec2>, Option<Vec2>));
+pub type Collision = (bool, (Option<Vec2d>, Option<Vec2d>));
 pub type Colliders = Vec<(Id, (Id, Collider), Id, Option<Physical>)>;
 
 pub struct PhysicsManager {
     pub rate: u32,
     pub step_amount: u32,
     pub max_delta: Option<Duration>,
-    pub bounds: (Box2, usize),
+    pub bounds: (Box2d, usize),
     frame: Instant,
     count: u32,
 }
@@ -29,7 +29,7 @@ impl PhysicsManager {
         rate: u32,
         step_amount: u32,
         max_delta: Option<Duration>,
-        bounds: (Box2, usize),
+        bounds: (Box2d, usize),
     ) -> Self {
         Self {
             rate,
@@ -68,7 +68,7 @@ impl PhysicsManager {
         other_e: Id,
         cache_collider: Id,
         cache_transform: Id,
-        tr: Option<Vec2>,
+        tr: Option<Vec2d>,
         cm: &mut ComponentManager,
     ) {
         if let Some(collider) = cm
@@ -123,7 +123,7 @@ impl PhysicsManager {
             .cloned()
             .filter_map(|(ae, (ac, a_col), (at, a_transform), a_physical)| {
                 Some(
-                    tree.query(Box2::new(a_transform.position(), a_col.boundary))
+                    tree.query(Box2d::new(a_transform.position(), a_col.boundary))
                         .into_iter()
                         .filter_map(|(_, a)| {
                             let (be, (bc, b_col), (bt, b_transform), b_physical) = &*a;

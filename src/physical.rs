@@ -1,19 +1,19 @@
 use hex::{
     ecs::{component_manager::Component, Id},
     id,
-    math::Vec2,
+    math::Vec2d,
 };
 
 #[derive(Clone)]
 pub struct Physical {
-    pub force: Vec2,
-    velocity: Option<Vec2>,
-    last_position: Option<Vec2>,
+    pub force: Vec2d,
+    velocity: Option<Vec2d>,
+    last_position: Option<Vec2d>,
     pub active: bool,
 }
 
 impl Physical {
-    pub fn new(force: Vec2, active: bool) -> Self {
+    pub fn new(force: Vec2d, active: bool) -> Self {
         Self {
             force,
             velocity: None,
@@ -22,19 +22,19 @@ impl Physical {
         }
     }
 
-    pub fn last_position(&self) -> Option<Vec2> {
+    pub fn last_position(&self) -> Option<Vec2d> {
         self.last_position
     }
 
-    pub fn set_last_position(&mut self, lp: Vec2) {
+    pub fn set_last_position(&mut self, lp: Vec2d) {
         self.last_position = Some(lp);
     }
 
-    pub fn velocity(&self) -> Option<Vec2> {
+    pub fn velocity(&self) -> Option<Vec2d> {
         self.velocity
     }
 
-    pub fn set_velocity(&mut self, vel: Vec2) {
+    pub fn set_velocity(&mut self, vel: Vec2d) {
         self.velocity = Some(vel);
     }
 }
