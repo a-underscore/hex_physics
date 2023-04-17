@@ -78,10 +78,12 @@ impl PhysicsManager {
             collider.collisions.push(other_e);
         }
 
-        if let Some((tr, t)) = tr.and_then(|tr| {
-            (!ghost_col).then_some((tr, cm.get_cache_mut::<Transform>(cache_transform)?))
-        }) {
-            t.set_position(t.position() + tr);
+        if !ghost_col {
+            if let Some((tr, t)) =
+                tr.and_then(|tr| Some((tr, cm.get_cache_mut::<Transform>(cache_transform)?)))
+            {
+                t.set_position(t.position() + tr);
+            }
         }
     }
 
@@ -103,16 +105,15 @@ impl PhysicsManager {
                         })
                     })?,
                     cm.get_cache_id::<Transform>(e, em).and_then(|t| {
-                        cm.get_cache::<Transform>(t).and_then(|transform| {
-                            transform.active.then_some((t, transform.clone()))
-                        })
+                        cm.get_cache::<Transform>(t)
+                            .and_then(|transform| transform.active.then(|| (t, transform.clone())))
                     })?,
                     cm.get::<Physical>(e, em).cloned(),
                 ))
             })
             .filter_map(|ref e @ (be, _, (_, ref b_transform), _)| {
                 tree.insert((b_transform.position(), be), Arc::new(e.clone()))
-                    .then_some(e.clone())
+                    .then(|| e.clone())
             })
             .collect();
 
