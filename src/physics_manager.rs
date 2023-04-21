@@ -115,7 +115,6 @@ impl PhysicsManager {
                     .then(|| e.clone())
             })
             .collect();
-
         let checked = RwLock::new(Vec::new());
 
         for ((ae, ac, at), (be, bc, bt), (ghost, (atr, btr))) in entities
@@ -180,7 +179,7 @@ impl PhysicsManager {
 
                     if let Some(step_amount) = step_amount {
                         t.set_position(
-                            t.position() + force / step_amount as f32 * delta.as_secs_f32(),
+                            t.position() + (force * delta.as_secs_f32()) / step_amount as f32,
                         );
 
                         self.check_collisions((em, cm));

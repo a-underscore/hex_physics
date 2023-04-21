@@ -161,7 +161,7 @@ impl Collider {
             }?;
 
             if min.map(|(min, _)| m < min).unwrap_or(true) {
-                min = Some((m, axis));
+                min = Some((m, axis.normal()));
             }
         }
 
