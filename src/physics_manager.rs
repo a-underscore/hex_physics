@@ -95,7 +95,7 @@ impl PhysicsManager {
             .keys()
             .cloned()
             .filter_map(|e| {
-                Some((
+                let ref e @ (be, _, (_, ref b_transform), _) = (
                     e,
                     cm.get_cache_id::<Collider>(e, em).and_then(|c| {
                         cm.get_cache_mut::<Collider>(c).and_then(|col| {
@@ -109,9 +109,8 @@ impl PhysicsManager {
                             .and_then(|transform| transform.active.then(|| (t, transform.clone())))
                     })?,
                     cm.get::<Physical>(e, em).cloned(),
-                ))
-            })
-            .filter_map(|ref e @ (be, _, (_, ref b_transform), _)| {
+                );
+
                 tree.insert((b_transform.position(), be), Arc::new(e.clone()))
                     .then(|| e.clone())
             })
