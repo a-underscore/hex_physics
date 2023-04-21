@@ -90,35 +90,31 @@ impl PhysicsManager {
     pub fn check_collisions(&self, (em, cm): (&EntityManager, &mut ComponentManager)) {
         let (boundary, cap) = self.bounds.clone();
         let mut tree = QuadTree::new(boundary, cap);
-        let entities: Vec<_> = em
-            .entities
-            .keys()
-            .cloned()
-            .filter_map(|e| {
-                let ref e @ (be, _, (_, ref b_transform), _) = (
-                    e,
-                    cm.get_cache_id::<Collider>(e, em).and_then(|c| {
-                        cm.get_cache_mut::<Collider>(c).and_then(|col| {
-                            col.collisions.clear();
+        let entities = em.entities.keys().cloned().filter_map(|e| {
+            let ref e @ (be, _, (_, ref b_transform), _) = (
+                e,
+                cm.get_cache_id::<Collider>(e, em).and_then(|c| {
+                    cm.get_cache_mut::<Collider>(c).and_then(|col| {
+                        col.collisions.clear();
 
-                            col.active.then(|| (c, col.clone()))
-                        })
-                    })?,
-                    cm.get_cache_id::<Transform>(e, em).and_then(|t| {
-                        cm.get_cache::<Transform>(t)
-                            .and_then(|transform| transform.active.then(|| (t, transform.clone())))
-                    })?,
-                    cm.get::<Physical>(e, em).cloned(),
-                );
+                        col.active.then(|| (c, col.clone()))
+                    })
+                })?,
+                cm.get_cache_id::<Transform>(e, em).and_then(|t| {
+                    cm.get_cache::<Transform>(t)
+                        .and_then(|transform| transform.active.then(|| (t, transform.clone())))
+                })?,
+                cm.get::<Physical>(e, em).cloned(),
+            );
 
-                tree.insert((b_transform.position(), be), Arc::new(e.clone()))
-                    .then(|| e.clone())
-            })
-            .collect();
+            tree.insert((b_transform.position(), be), Arc::new(e.clone()))
+                .then(|| e.clone())
+        });
 
         let checked = RwLock::new(Vec::new());
 
         for ((ae, ac, at), (be, bc, bt), (ghost, (atr, btr))) in entities
+            .collect::<Vec<_>>()
             .par_iter()
             .cloned()
             .filter_map(|(ae, (ac, a_col), (at, a_transform), a_physical)| {
@@ -180,7 +176,7 @@ impl PhysicsManager {
 
                     if let Some(step_amount) = step_amount {
                         t.set_position(
-                            t.position() + force / step_amount as f32 * delta.as_secs_f32(),
+                            t.position() + (force * delta.as_secs_f32() / step_amount as f32),
                         );
 
                         self.check_collisions((em, cm));
