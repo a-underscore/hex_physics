@@ -116,7 +116,7 @@ impl Collider {
             let p1 = a_points[i];
             let p2 = a_points[(i + 1) % a_points.len()];
 
-            let axis = Vec2d::new(p2.y() - p1.y(), p1.x() - p2.x()).normal();
+            let axis = Vec2d::new(p2.y() - p1.y(), p1.x() - p2.x());
 
             let mut a_min = None;
             let mut a_max = None;
@@ -165,7 +165,7 @@ impl Collider {
             }
         }
 
-        min.map(|(m, a)| a * m)
+        min.map(|(m, a)| a.normal() * m)
     }
 }
 
