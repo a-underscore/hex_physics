@@ -98,11 +98,8 @@ impl PhysicsManager {
                 let ref e @ (be, _, (_, ref b_transform), _) = (
                     e,
                     cm.get_cache_id::<Collider>(e, em).and_then(|c| {
-                        cm.get_cache_mut::<Collider>(c).and_then(|col| {
-                            col.collisions.clear();
-
-                            col.active.then(|| (c, col.clone()))
-                        })
+                        cm.get_cache_mut::<Collider>(c)
+                            .and_then(|col| col.active.then(|| (c, col.clone())))
                     })?,
                     cm.get_cache_id::<Transform>(e, em).and_then(|t| {
                         cm.get_cache::<Transform>(t)
@@ -202,6 +199,17 @@ impl PhysicsManager {
             }
         }
     }
+
+    pub fn clear_collisions(&self, (em, cm): (&mut EntityManager, &mut ComponentManager)) {
+        for e in em.entities.keys().cloned() {
+            if let Some(col) = cm
+                .get_mut::<Collider>(e, &em)
+                .and_then(|col| col.active.then_some(col))
+            {
+                col.collisions.clear()
+            }
+        }
+    }
 }
 
 impl<'a> System<'a> for PhysicsManager {
@@ -231,6 +239,8 @@ impl<'a> System<'a> for PhysicsManager {
 
             if self.count >= self.rate {
                 self.count = 0;
+
+                self.clear_collisions((em, cm));
 
                 for _ in 0..self.step_amount {
                     self.update_positions(Some(self.step_amount), delta, (em, cm));
