@@ -97,11 +97,11 @@ impl PhysicsManager {
             .filter_map(|e| {
                 let ref e @ (be, _, (_, ref b_transform), _) = (
                     e,
-                    cm.get_id::<Collider>(e, em).and_then(|c| {
+                    cm.get_cache_id::<Collider>(e, em).and_then(|c| {
                         cm.get_cache_mut::<Collider>(c)
                             .and_then(|col| col.active.then(|| (c, col.clone())))
                     })?,
-                    cm.get_id::<Transform>(e, em).and_then(|t| {
+                    cm.get_cache_id::<Transform>(e, em).and_then(|t| {
                         cm.get_cache::<Transform>(t)
                             .and_then(|transform| transform.active.then(|| (t, transform.clone())))
                     })?,
