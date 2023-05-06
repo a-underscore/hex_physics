@@ -36,24 +36,17 @@ impl Collider {
         }
     }
 
-    pub fn rect(
-        dims: Vec2d,
-        boundary: f32,
-        layer: Vec<Id>,
-        ignore: Vec<Id>,
-        ghost: bool,
-        active: bool,
-    ) -> Self {
-        let dims = dims / 2.0;
+    pub fn rect(dims: Vec2d, layer: Vec<Id>, ignore: Vec<Id>, ghost: bool, active: bool) -> Self {
+        let dims1 = dims / 2.0;
 
         Self::new(
             vec![
-                Vec2d::new(-dims.x(), -dims.y()),
-                Vec2d::new(-dims.x(), dims.y()),
-                Vec2d::new(dims.x(), dims.y()),
-                Vec2d::new(dims.x(), -dims.y()),
+                Vec2d::new(-dims1.x(), -dims1.y()),
+                Vec2d::new(-dims1.x(), dims1.y()),
+                Vec2d::new(dims1.x(), dims1.y()),
+                Vec2d::new(dims1.x(), -dims1.y()),
             ],
-            boundary,
+            dims.magnitude(),
             layer,
             ignore,
             ghost,
@@ -61,14 +54,7 @@ impl Collider {
         )
     }
 
-    pub fn oct(
-        dims: Vec2d,
-        boundary: f32,
-        layers: Vec<Id>,
-        ignore: Vec<Id>,
-        ghost: bool,
-        active: bool,
-    ) -> Self {
+    pub fn oct(dims: Vec2d, layers: Vec<Id>, ignore: Vec<Id>, ghost: bool, active: bool) -> Self {
         let dims1 = dims / 2.0;
         let dims2 = Vec2d([dims1.magnitude(); 2]);
 
@@ -83,7 +69,7 @@ impl Collider {
                 Vec2d::new(dims1.x(), -dims1.y()),
                 Vec2d::new(0.0, -dims2.y()),
             ],
-            boundary,
+            dims.magnitude(),
             layers,
             ignore,
             ghost,
