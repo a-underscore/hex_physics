@@ -1,12 +1,14 @@
 use hex::{ecs::Id, math::Vec2d};
 use std::sync::Arc;
 
+pub type Sub<T> = (Box<T>, Box<T>, Box<T>, Box<T>);
+
 #[derive(Default, Clone)]
 pub struct QuadTree<T> {
     pub boundary: Box2d,
     pub cap: usize,
     pub points: Vec<((Vec2d, Id), Arc<T>)>,
-    pub sub: Option<(Box<Self>, Box<Self>, Box<Self>, Box<Self>)>,
+    pub sub: Option<Sub<Self>>,
 }
 
 impl<T> QuadTree<T> {
