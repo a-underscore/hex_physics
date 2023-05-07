@@ -6,10 +6,7 @@ pub struct QuadTree<T> {
     pub boundary: Box2d,
     pub cap: usize,
     pub points: Vec<((Vec2d, Id), Arc<T>)>,
-    pub nw: Option<Box<Self>>,
-    pub ne: Option<Box<Self>>,
-    pub se: Option<Box<Self>>,
-    pub sw: Option<Box<Self>>,
+    pub sub: Option<(Box<Self>, Box<Self>, Box<Self>, Box<Self>)>,
 }
 
 impl<T> QuadTree<T> {
@@ -18,10 +15,7 @@ impl<T> QuadTree<T> {
             boundary,
             cap,
             points: Vec::new(),
-            nw: None,
-            ne: None,
-            se: None,
-            sw: None,
+            sub: None,
         }
     }
 
@@ -30,44 +24,36 @@ impl<T> QuadTree<T> {
             return false;
         }
 
-        if self.points.len() < self.cap && self.ne.is_none() {
-            self.points.push((v, t));
+        if self.sub.is_none() {
+            if self.points.len() < self.cap {
+                self.points.push((v, t));
 
-            return true;
-        }
+                return true;
+            }
 
-        if self.ne.is_none() {
             self.subdivide();
         }
 
-        self.nw
+        self.sub
             .as_mut()
-            .map(|nw| nw.insert(v, t.clone()))
+            .map(|(nw, ne, sw, se)| {
+                nw.insert(v, t.clone())
+                    || ne.insert(v, t.clone())
+                    || sw.insert(v, t.clone())
+                    || se.insert(v, t.clone())
+            })
             .unwrap_or_default()
-            || self
-                .ne
-                .as_mut()
-                .map(|ne| ne.insert(v, t.clone()))
-                .unwrap_or_default()
-            || self
-                .sw
-                .as_mut()
-                .map(|sw| sw.insert(v, t.clone()))
-                .unwrap_or_default()
-            || self
-                .se
-                .as_mut()
-                .map(|se| se.insert(v, t.clone()))
-                .unwrap_or_default()
     }
 
     pub fn subdivide(&mut self) {
         let sub_boxes = self.boundary.subdivide();
 
-        self.nw = Some(Box::new(QuadTree::new(sub_boxes.0, self.cap)));
-        self.ne = Some(Box::new(QuadTree::new(sub_boxes.1, self.cap)));
-        self.se = Some(Box::new(QuadTree::new(sub_boxes.2, self.cap)));
-        self.sw = Some(Box::new(QuadTree::new(sub_boxes.3, self.cap)));
+        self.sub = Some((
+            Box::new(Self::new(sub_boxes.0, self.cap)),
+            Box::new(Self::new(sub_boxes.1, self.cap)),
+            Box::new(Self::new(sub_boxes.2, self.cap)),
+            Box::new(Self::new(sub_boxes.3, self.cap)),
+        ));
     }
 
     pub fn query(&self, range: Box2d) -> Vec<((Vec2d, Id), Arc<T>)> {
@@ -83,38 +69,19 @@ impl<T> QuadTree<T> {
             }
         }
 
-        if self.ne.is_none() {
+        if self.sub.is_none() {
             return points;
         }
 
-        points.append(
-            &mut self
-                .nw
-                .as_ref()
-                .map(|nw| nw.query(range.clone()))
-                .unwrap_or_default(),
-        );
-        points.append(
-            &mut self
-                .ne
-                .as_ref()
-                .map(|ne| ne.query(range.clone()))
-                .unwrap_or_default(),
-        );
-        points.append(
-            &mut self
-                .sw
-                .as_ref()
-                .map(|sw| sw.query(range.clone()))
-                .unwrap_or_default(),
-        );
-        points.append(
-            &mut self
-                .se
-                .as_ref()
-                .map(|se| se.query(range.clone()))
-                .unwrap_or_default(),
-        );
+        self.sub
+            .as_ref()
+            .map(|(nw, ne, sw, se)| {
+                points.append(&mut nw.query(range.clone()));
+                points.append(&mut ne.query(range.clone()));
+                points.append(&mut sw.query(range.clone()));
+                points.append(&mut se.query(range.clone()));
+            })
+            .unwrap_or_default();
 
         points
     }
