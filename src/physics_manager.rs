@@ -166,45 +166,21 @@ impl PhysicsManager {
         (em, cm): (&mut EntityManager, &mut ComponentManager),
     ) {
         for e in em.entities.keys().cloned() {
-            if let Some((pos, physical)) = cm
-                .get::<Physical>(e, em)
-                .cloned()
-                .and_then(|p| {
-                    let force = p.active.then_some(p.force)?;
-                    let t = cm.get_id::<Transform>(e, em)?;
-                    let pos = if let Some(step_amount) = step_amount {
-                        if let Some(t) = cm.get_cache_mut::<Transform>(t) {
-                            t.set_position(
-                                t.position() + (force * delta.as_secs_f32()) / step_amount as f32,
-                            );
-                        }
+            if let Some((force, t)) = cm.get::<Physical>(e, em).cloned().and_then(|p| {
+                Some((
+                    p.active.then_some(p.force)?,
+                    cm.get_mut::<Transform>(e, em)?,
+                ))
+            }) {
+                if let Some(step_amount) = step_amount {
+                    t.set_position(
+                        t.position() + (force * delta.as_secs_f32()) / step_amount as f32,
+                    );
 
-                        self.check_collisions((em, cm));
-
-                        cm.get_cache::<Transform>(t).map(|t| t.position())
-                    } else if let Some(t) = cm.get_cache_mut::<Transform>(t) {
-                        t.set_position(t.position() + force * delta.as_secs_f32());
-
-                        Some(t.position())
-                    } else {
-                        None
-                    };
-
-                    pos
-                })
-                .and_then(|pos| Some((pos, cm.get_mut::<Physical>(e, em)?)))
-            {
-                if let Some(vel) = physical.last_position().map(|l| {
-                    if let Some(step_amount) = step_amount {
-                        (pos - l) / (delta.as_secs_f32() * step_amount as f32)
-                    } else {
-                        (pos - l) / delta.as_secs_f32()
-                    }
-                }) {
-                    physical.set_velocity(vel);
+                    self.check_collisions((em, cm));
+                } else {
+                    t.set_position(t.position() + force * delta.as_secs_f32());
                 }
-
-                physical.set_last_position(pos);
             }
         }
     }
