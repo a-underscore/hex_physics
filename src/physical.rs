@@ -30,8 +30,8 @@ impl Physical {
         self.last_position = Some(lp);
     }
 
-    pub fn velocity(&self) -> Option<Vec2d> {
-        self.velocity
+    pub fn velocity(&self) -> Vec2d {
+        self.velocity.unwrap_or_default()
     }
 
     pub fn set_velocity(&mut self, vel: Vec2d) {
