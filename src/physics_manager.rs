@@ -171,24 +171,32 @@ impl PhysicsManager {
                 .cloned()
                 .and_then(|p| {
                     let force = p.active.then_some(p.force)?;
-                    let t = cm.get_mut::<Transform>(e, em)?;
+                    let t = cm.get_id::<Transform>(e, em)?;
                     let pos = if let Some(step_amount) = step_amount {
-                        t.set_position(
-                            t.position() + (force * delta.as_secs_f32()) / step_amount as f32,
-                        );
-
-                        let pos = t.position();
+                        if let Some(t) = cm.get_cache_mut::<Transform>(t) {
+                            t.set_position(
+                                t.position() + (force * delta.as_secs_f32()) / step_amount as f32,
+                            );
+                        }
 
                         self.check_collisions((em, cm));
 
-                        pos
+                        if let Some(t) = cm.get_cache::<Transform>(t) {
+                            Some(t.position())
+                        } else {
+                            None
+                        }
                     } else {
-                        t.set_position(t.position() + force * delta.as_secs_f32());
+                        if let Some(t) = cm.get_cache_mut::<Transform>(t) {
+                            t.set_position(t.position() + force * delta.as_secs_f32());
 
-                        t.position()
+                            Some(t.position())
+                        } else {
+                            None
+                        }
                     };
 
-                    Some(pos)
+                    pos
                 })
                 .and_then(|pos| Some((pos, cm.get_mut::<Physical>(e, em)?)))
             {
