@@ -194,10 +194,13 @@ impl PhysicsManager {
                 })
                 .and_then(|pos| Some((pos, cm.get_mut::<Physical>(e, em)?)))
             {
-                if let Some(vel) = physical
-                    .last_position()
-                    .map(|l| (pos - l) / delta.as_secs_f32())
-                {
+                if let Some(vel) = physical.last_position().map(|l| {
+                    if let Some(step_amount) = step_amount {
+                        (pos - l) / (delta.as_secs_f32() * step_amount as f32)
+                    } else {
+                        (pos - l) / delta.as_secs_f32()
+                    }
+                }) {
                     physical.set_velocity(vel);
                 }
 
