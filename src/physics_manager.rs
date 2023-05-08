@@ -181,19 +181,13 @@ impl PhysicsManager {
 
                         self.check_collisions((em, cm));
 
-                        if let Some(t) = cm.get_cache::<Transform>(t) {
-                            Some(t.position())
-                        } else {
-                            None
-                        }
-                    } else {
-                        if let Some(t) = cm.get_cache_mut::<Transform>(t) {
-                            t.set_position(t.position() + force * delta.as_secs_f32());
+                        cm.get_cache::<Transform>(t).map(|t| t.position())
+                    } else if let Some(t) = cm.get_cache_mut::<Transform>(t) {
+                        t.set_position(t.position() + force * delta.as_secs_f32());
 
-                            Some(t.position())
-                        } else {
-                            None
-                        }
+                        Some(t.position())
+                    } else {
+                        None
                     };
 
                     pos
