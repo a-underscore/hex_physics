@@ -169,7 +169,8 @@ impl PhysicsManager {
             if let Some((force, t)) = cm.get::<Physical>(e, em).cloned().and_then(|p| {
                 Some((
                     p.active.then_some(p.force)?,
-                    cm.get_mut::<Transform>(e, em)?,
+                    cm.get_mut::<Transform>(e, em)
+                        .and_then(|t| t.active.then_some(t))?,
                 ))
             }) {
                 if let Some(step_amount) = step_amount {
@@ -192,6 +193,25 @@ impl PhysicsManager {
                 .and_then(|col| col.active.then_some(col))
             {
                 col.collisions.clear()
+            }
+        }
+    }
+
+    pub fn update_velocities(
+        &self,
+        delta: Duration,
+        (em, cm): (&mut EntityManager, &mut ComponentManager),
+    ) {
+        for e in em.entities.keys().cloned() {
+            if let Some((t, p)) = cm.get::<Transform>(e, em).cloned().and_then(|t| {
+                Some((
+                    t.active.then_some(t)?,
+                    cm.get_mut::<Physical>(e, em)
+                        .and_then(|p| p.active.then_some(p))?,
+                ))
+            }) {
+                p.set_velocity((t.position() - p.last_position()) / delta.as_secs_f32());
+                p.set_last_position(t.position());
             }
         }
     }
@@ -233,6 +253,8 @@ impl<'a> System<'a> for PhysicsManager {
             } else {
                 self.update_positions(None, delta, (em, cm));
             }
+
+            self.update_velocities(delta, (em, cm));
 
             self.count += 1;
         }
