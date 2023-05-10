@@ -6,9 +6,8 @@ use hex::{
     glium::glutin::event::Event,
     math::Vec2d,
 };
-use rayon::prelude::*;
 use std::{
-    sync::{Arc, RwLock},
+    sync::Arc,
     time::{Duration, Instant},
 };
 
@@ -114,10 +113,10 @@ impl PhysicsManager {
                     .then(|| e.clone())
             })
             .collect();
-        let checked = RwLock::new(Vec::new());
+        let mut checked = Vec::new();
 
         for ((ae, ac, at), (be, bc, bt), (ghost, (atr, btr))) in entities
-            .par_iter()
+            .iter()
             .filter_map(|(ae, (ac, a_col), (at, a_transform), a_physical)| {
                 Some(
                     tree.query(Box2d::new(a_transform.position(), a_col.boundary))
@@ -125,13 +124,7 @@ impl PhysicsManager {
                         .filter_map(|(_, a)| {
                             let (be, (bc, b_col), (bt, b_transform), b_physical) = &*a;
                             let res = {
-                                let res = {
-                                    let checked = checked.read().ok()?;
-
-                                    !checked.contains(&(ae, *be)) && !checked.contains(&(be, *ae))
-                                };
-
-                                if res {
+                                if !checked.contains(&(ae, *be)) && !checked.contains(&(be, *ae)) {
                                     Some((
                                         (ae, ac, at),
                                         (*be, *bc, *bt),
@@ -145,7 +138,7 @@ impl PhysicsManager {
                                 }
                             };
 
-                            checked.write().ok()?.push((ae, *be));
+                            checked.push((ae, *be));
 
                             res
                         })
