@@ -105,7 +105,9 @@ impl PhysicsManager {
                         cm.get_cache::<Transform>(t)
                             .and_then(|transform| transform.active.then(|| (t, transform.clone())))
                     })?,
-                    cm.get::<Physical>(e, em).cloned(),
+                    cm.get::<Physical>(e, em)
+                        .and_then(|p| p.active.then_some(p))
+                        .cloned(),
                 );
 
                 tree.insert((b_transform.position(), be), Arc::new(e.clone()))
@@ -116,7 +118,6 @@ impl PhysicsManager {
 
         for ((ae, ac, at), (be, bc, bt), (ghost, (atr, btr))) in entities
             .par_iter()
-            .cloned()
             .filter_map(|(ae, (ac, a_col), (at, a_transform), a_physical)| {
                 Some(
                     tree.query(Box2d::new(a_transform.position(), a_col.boundary))
@@ -127,7 +128,7 @@ impl PhysicsManager {
                                 let res = {
                                     let checked = checked.read().ok()?;
 
-                                    !checked.contains(&(ae, *be)) && !checked.contains(&(*be, ae))
+                                    !checked.contains(&(ae, *be)) && !checked.contains(&(be, *ae))
                                 };
 
                                 if res {
@@ -154,8 +155,8 @@ impl PhysicsManager {
             .flatten()
             .collect::<Vec<_>>()
         {
-            Self::resolve(ghost, ae, bc, bt, btr, cm);
-            Self::resolve(ghost, be, ac, at, atr, cm);
+            Self::resolve(ghost, *ae, bc, bt, btr, cm);
+            Self::resolve(ghost, be, *ac, *at, atr, cm);
         }
     }
 
