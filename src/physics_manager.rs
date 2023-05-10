@@ -117,7 +117,7 @@ impl PhysicsManager {
 
         for ((ae, ac, at), (be, bc, bt), (ghost, (atr, btr))) in entities
             .iter()
-            .map(|(ae, (ac, a_col), (at, a_transform), a_physical)| {
+            .flat_map(|(ae, (ac, a_col), (at, a_transform), a_physical)| {
                 tree.query(Box2d::new(a_transform.position(), a_col.boundary))
                     .into_iter()
                     .filter_map(|(_, a)| {
@@ -143,7 +143,6 @@ impl PhysicsManager {
                     })
                     .collect::<Vec<_>>()
             })
-            .flatten()
             .collect::<Vec<_>>()
         {
             Self::resolve(ghost, *ae, bc, bt, btr, cm);
