@@ -115,11 +115,11 @@ impl PhysicsManager {
             })
             .collect();
         let checked = RwLock::new(Vec::new());
-
-        for ((ae, ac, at), (be, bc, bt), (ghost, (atr, btr))) in entities
+        let res: Vec<_> = entities
             .par_iter()
             .flat_map(|(ae, (ac, a_col), (at, a_transform), a_physical)| {
-                tree.query(Box2d::new(a_transform.position(), a_col.boundary))
+                let res: Vec<_> = tree
+                    .query(Box2d::new(a_transform.position(), a_col.boundary))
                     .into_iter()
                     .filter_map(|(_, a)| {
                         let (be, (bc, b_col), (bt, b_transform), b_physical) = &*a;
@@ -148,10 +148,13 @@ impl PhysicsManager {
 
                         res
                     })
-                    .collect::<Vec<_>>()
+                    .collect();
+
+                res
             })
-            .collect::<Vec<_>>()
-        {
+            .collect();
+
+        for ((ae, ac, at), (be, bc, bt), (ghost, (atr, btr))) in res {
             Self::resolve(ghost, *ae, bc, bt, btr, cm);
             Self::resolve(ghost, be, *ac, *at, atr, cm);
         }
