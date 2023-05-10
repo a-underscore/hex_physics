@@ -115,35 +115,35 @@ impl PhysicsManager {
             .collect();
         let mut checked = Vec::new();
 
-        for ((ae, ac, at), (be, bc, bt), (ghost, (atr, btr))) in entities
-            .iter()
-            .flat_map(|(ae, (ac, a_col), (at, a_transform), a_physical)| {
-                tree.query(Box2d::new(a_transform.position(), a_col.boundary))
-                    .into_iter()
-                    .filter_map(|(_, a)| {
-                        let (be, (bc, b_col), (bt, b_transform), b_physical) = &*a;
-                        let res = {
-                            if !checked.contains(&(ae, *be)) && !checked.contains(&(be, *ae)) {
-                                Some((
-                                    (ae, ac, at),
-                                    (*be, *bc, *bt),
-                                    Self::detect(
-                                        (a_col, a_transform, a_physical),
-                                        (b_col, b_transform, b_physical),
-                                    )?,
-                                ))
-                            } else {
-                                None
-                            }
-                        };
+        for ((ae, ac, at), (be, bc, bt), (ghost, (atr, btr))) in
+            entities
+                .iter()
+                .flat_map(|(ae, (ac, a_col), (at, a_transform), a_physical)| {
+                    tree.query(Box2d::new(a_transform.position(), a_col.boundary))
+                        .into_iter()
+                        .filter_map(|(_, a)| {
+                            let (be, (bc, b_col), (bt, b_transform), b_physical) = &*a;
+                            let res = {
+                                if !checked.contains(&(ae, *be)) && !checked.contains(&(be, *ae)) {
+                                    Some((
+                                        (ae, ac, at),
+                                        (*be, *bc, *bt),
+                                        Self::detect(
+                                            (a_col, a_transform, a_physical),
+                                            (b_col, b_transform, b_physical),
+                                        )?,
+                                    ))
+                                } else {
+                                    None
+                                }
+                            };
 
-                        checked.push((ae, *be));
+                            checked.push((ae, *be));
 
-                        res
-                    })
-                    .collect::<Vec<_>>()
-            })
-            .collect::<Vec<_>>()
+                            res
+                        })
+                        .collect::<Vec<_>>()
+                })
         {
             Self::resolve(ghost, *ae, bc, bt, btr, cm);
             Self::resolve(ghost, be, *ac, *at, atr, cm);
