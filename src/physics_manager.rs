@@ -99,20 +99,20 @@ impl PhysicsManager {
                     e,
                     cm.get_id::<Collider>(e, em).and_then(|c| {
                         cm.get_cache::<Collider>(c)
-                            .and_then(|col| col.active.then(|| (c, col)))
+                            .and_then(|col| col.active.then_some((c, col)))
                     })?,
                     cm.get_id::<Transform>(e, em).and_then(|t| {
                         cm.get_cache::<Transform>(t)
-                            .and_then(|transform| transform.active.then(|| (t, transform)))
+                            .and_then(|transform| transform.active.then_some((t, transform)))
                     })?,
                     cm.get::<Physical>(e, em)
                         .and_then(|p| p.active.then_some(p))
                         .cloned(),
                 ));
-                let (be, _, (_, ref b_transform), _) = &*e;
+                let (be, _, (_, b_transform), _) = &*e;
 
                 tree.insert((b_transform.position(), *be), e.clone())
-                    .then(|| e)
+                    .then_some(e)
             })
             .collect();
         let checked = RwLock::new(Vec::new());
