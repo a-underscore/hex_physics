@@ -95,29 +95,31 @@ impl PhysicsManager {
             .keys()
             .cloned()
             .filter_map(|e| {
-                let ref e @ (be, _, (_, ref b_transform), _) = (
+                let e = Arc::new((
                     e,
                     cm.get_id::<Collider>(e, em).and_then(|c| {
                         cm.get_cache::<Collider>(c)
-                            .and_then(|col| col.active.then(|| (c, col.clone())))
+                            .and_then(|col| col.active.then(|| (c, col)))
                     })?,
                     cm.get_id::<Transform>(e, em).and_then(|t| {
                         cm.get_cache::<Transform>(t)
-                            .and_then(|transform| transform.active.then(|| (t, transform.clone())))
+                            .and_then(|transform| transform.active.then(|| (t, transform)))
                     })?,
                     cm.get::<Physical>(e, em)
                         .and_then(|p| p.active.then_some(p))
                         .cloned(),
-                );
+                ));
+                let (be, _, (_, ref b_transform), _) = &*e;
 
-                tree.insert((b_transform.position(), be), Arc::new(e.clone()))
-                    .then(|| e.clone())
+                tree.insert((b_transform.position(), *be), e.clone())
+                    .then(|| e)
             })
             .collect();
         let checked = RwLock::new(Vec::new());
         let res: Vec<_> = entities
             .par_iter()
-            .flat_map(|(ae, (ac, a_col), (at, a_transform), a_physical)| {
+            .flat_map(|e| {
+                let (ae, (ac, a_col), (at, a_transform), a_physical) = &**e;
                 let res: Vec<_> = tree
                     .query(Box2d::new(a_transform.position(), a_col.boundary))
                     .into_iter()
@@ -130,9 +132,12 @@ impl PhysicsManager {
                                 !checked.contains(&(ae, *be)) && !checked.contains(&(be, *ae))
                             };
 
-                            if res {
+                            if res
+                                && (a_transform.position() - b_transform.position()).magnitude()
+                                    <= a_col.boundary + b_col.boundary
+                            {
                                 Some((
-                                    (ae, ac, at),
+                                    (*ae, *ac, *at),
                                     (*be, *bc, *bt),
                                     Self::detect(
                                         (a_col, a_transform, a_physical),
@@ -155,8 +160,8 @@ impl PhysicsManager {
             .collect();
 
         for ((ae, ac, at), (be, bc, bt), (ghost, (atr, btr))) in res {
-            Self::resolve(ghost, *ae, bc, bt, btr, cm);
-            Self::resolve(ghost, be, *ac, *at, atr, cm);
+            Self::resolve(ghost, ae, bc, bt, btr, cm);
+            Self::resolve(ghost, be, ac, at, atr, cm);
         }
     }
 
