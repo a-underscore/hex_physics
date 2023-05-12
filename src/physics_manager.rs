@@ -8,7 +8,7 @@ use hex::{
 };
 use rayon::prelude::*;
 use std::{
-    sync::{Arc, RwLock},
+    sync::Arc,
     time::{Duration, Instant},
 };
 
@@ -115,48 +115,50 @@ impl PhysicsManager {
                     .then_some(e)
             })
             .collect();
-        let checked = RwLock::new(Vec::new());
-        let res: Vec<_> = entities
+        let (res, _): (Vec<_>, Vec<_>) = entities
             .par_iter()
-            .flat_map(|e| {
-                let (ae, (ac, a_col), (at, a_transform), a_physical) = &**e;
-                let res: Vec<_> = tree
-                    .query(Box2d::new(a_transform.position(), a_col.boundary))
-                    .into_iter()
-                    .filter_map(|(_, a)| {
-                        let (be, (bc, b_col), (bt, b_transform), b_physical) = &*a;
-                        let res = {
-                            let res = {
-                                let checked = checked.read().ok()?;
+            .fold(
+                || (Vec::new(), Vec::new()),
+                |(mut res, mut checked), e| {
+                    let (ae, (ac, a_col), (at, a_transform), a_physical) = &**e;
 
-                                !checked.contains(&(ae, *be)) && !checked.contains(&(be, *ae))
-                            };
+                    res.extend(
+                        tree.query(Box2d::new(a_transform.position(), a_col.boundary))
+                            .into_iter()
+                            .filter_map(|(_, a)| {
+                                let (be, (bc, b_col), (bt, b_transform), b_physical) = &*a;
+                                let res = {
+                                    let res = !checked.contains(&(ae, *be))
+                                        && !checked.contains(&(be, *ae));
 
-                            if res
-                                && (a_transform.position() - b_transform.position()).magnitude()
-                                    <= a_col.boundary + b_col.boundary
-                            {
-                                Some((
-                                    (*ae, *ac, *at),
-                                    (*be, *bc, *bt),
-                                    Self::detect(
-                                        (a_col, a_transform, a_physical),
-                                        (b_col, b_transform, b_physical),
-                                    )?,
-                                ))
-                            } else {
-                                None
-                            }
-                        };
+                                    if res
+                                        && (a_transform.position() - b_transform.position())
+                                            .magnitude()
+                                            <= a_col.boundary + b_col.boundary
+                                    {
+                                        Some((
+                                            (*ae, *ac, *at),
+                                            (*be, *bc, *bt),
+                                            Self::detect(
+                                                (a_col, a_transform, a_physical),
+                                                (b_col, b_transform, b_physical),
+                                            )?,
+                                        ))
+                                    } else {
+                                        None
+                                    }
+                                };
 
-                        checked.write().ok()?.push((ae, *be));
+                                checked.push((ae, *be));
 
-                        res
-                    })
-                    .collect();
+                                res
+                            }),
+                    );
 
-                res
-            })
+                    (res, checked)
+                },
+            )
+            .flatten()
             .collect();
 
         for ((ae, ac, at), (be, bc, bt), (ghost, (atr, btr))) in res {
