@@ -42,8 +42,8 @@ impl PhysicsManager {
     }
 
     pub fn detect(
-        (ac, at, ap): (&Collider, &Transform, &Option<Physical>),
-        (bc, bt, bp): (&Collider, &Transform, &Option<Physical>),
+        (ac, at, ap): (&Collider, &Transform, Option<&Physical>),
+        (bc, bt, bp): (&Collider, &Transform, Option<&Physical>),
     ) -> Option<Collision> {
         if ac.layers.iter().any(|a| bc.layers.contains(a))
             && !ac.ignore.iter().any(|a| bc.layers.contains(a))
@@ -88,8 +88,8 @@ impl PhysicsManager {
     }
 
     pub fn check_collisions(&self, (em, cm): (&EntityManager, &mut ComponentManager)) {
-        let (boundary, cap) = self.bounds.clone();
-        let mut tree = QuadTree::new(boundary, cap);
+        let (boundary, cap) = &self.bounds;
+        let mut tree = QuadTree::new(boundary.clone(), *cap);
         let entities: Vec<_> = em
             .entities
             .keys()
@@ -106,8 +106,7 @@ impl PhysicsManager {
                             .and_then(|transform| transform.active.then_some((t, transform)))
                     })?,
                     cm.get::<Physical>(e, em)
-                        .and_then(|p| p.active.then_some(p))
-                        .cloned(),
+                        .and_then(|p| p.active.then_some(p)),
                 ));
                 let (be, _, (_, b_transform), _) = &*e;
 
@@ -140,8 +139,8 @@ impl PhysicsManager {
                                             (*ae, *ac, *at),
                                             (*be, *bc, *bt),
                                             Self::detect(
-                                                (a_col, a_transform, a_physical),
-                                                (b_col, b_transform, b_physical),
+                                                (a_col, a_transform, *a_physical),
+                                                (b_col, b_transform, *b_physical),
                                             )?,
                                         ))
                                     } else {
