@@ -12,7 +12,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-pub type Collision = (bool, (Option<Vec2d>, Option<Vec2d>));
 pub type Colliders = Vec<(Id, (Id, Collider), Id, Option<Physical>)>;
 
 pub struct PhysicsManager {
@@ -44,19 +43,23 @@ impl PhysicsManager {
     pub fn detect(
         (ac, at, ap): (&Collider, &Transform, Option<&Physical>),
         (bc, bt, bp): (&Collider, &Transform, Option<&Physical>),
-    ) -> Option<Collision> {
+    ) -> Option<(Option<Vec2d>, Option<Vec2d>)> {
         if ac.layers.iter().any(|a| bc.layers.contains(a))
-            && !ac.ignore.iter().any(|a| bc.layers.contains(a))
-            && !bc.ignore.iter().any(|b| ac.layers.contains(b))
+            && !(ac.ignore.iter().any(|a| bc.layers.contains(a))
+                || bc.ignore.iter().any(|b| ac.layers.contains(b)))
+            && (at.position() - bt.position()).magnitude() <= ac.boundary + bc.boundary
         {
             if let Some(min_translation) = ac.intersecting(at, bc, bt) {
-                return Some((
-                    ac.ghost || bc.ghost,
-                    (
-                        ap.as_ref().map(|_| -min_translation),
-                        bp.as_ref().map(|_| min_translation),
-                    ),
-                ));
+                return Some(
+                    (!(ac.ghost || bc.ghost))
+                        .then(|| {
+                            (
+                                ap.as_ref().is_some().then_some(-min_translation),
+                                bp.as_ref().is_some().then_some(min_translation),
+                            )
+                        })
+                        .unwrap_or_default(),
+                );
             }
         }
 
@@ -64,21 +67,17 @@ impl PhysicsManager {
     }
 
     pub fn resolve(
-        ghost_col: bool,
         other_e: Id,
         cache_collider: Id,
         cache_transform: Id,
         tr: Option<Vec2d>,
         cm: &mut ComponentManager,
     ) {
-        if let Some(collider) = cm
-            .get_cache_mut::<Collider>(cache_collider)
-            .and_then(|c| (!c.collisions.contains(&other_e)).then_some(c))
-        {
-            collider.collisions.push(other_e);
-        }
+        if let Some(collider) = cm.get_cache_mut::<Collider>(cache_collider) {
+            if !collider.collisions.contains(&other_e) {
+                collider.collisions.push(other_e);
+            }
 
-        if !ghost_col {
             if let Some((tr, t)) =
                 tr.and_then(|tr| Some((tr, cm.get_cache_mut::<Transform>(cache_transform)?)))
             {
@@ -130,11 +129,7 @@ impl PhysicsManager {
                                     let res = !checked.contains(&(ae, *be))
                                         && !checked.contains(&(be, *ae));
 
-                                    if res
-                                        && (a_transform.position() - b_transform.position())
-                                            .magnitude()
-                                            <= a_col.boundary + b_col.boundary
-                                    {
+                                    if res {
                                         Some((
                                             (*ae, *ac, *at),
                                             (*be, *bc, *bt),
@@ -160,9 +155,9 @@ impl PhysicsManager {
             .flatten()
             .collect();
 
-        for ((ae, ac, at), (be, bc, bt), (ghost, (atr, btr))) in res {
-            Self::resolve(ghost, ae, bc, bt, btr, cm);
-            Self::resolve(ghost, be, ac, at, atr, cm);
+        for ((ae, ac, at), (be, bc, bt), (atr, btr)) in res {
+            Self::resolve(ae, bc, bt, btr, cm);
+            Self::resolve(be, ac, at, atr, cm);
         }
     }
 
