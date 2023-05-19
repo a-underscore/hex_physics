@@ -113,23 +113,22 @@ impl PhysicsManager {
                     .then_some(e)
             })
             .collect();
-        let (res, _): (Vec<_>, Vec<_>) = entities
-            .par_iter()
-            .fold(
-                || (Vec::new(), Vec::new()),
-                |(mut res, mut checked), e| {
-                    let (ae, (ac, a_col), (at, a_transform), a_physical) = &**e;
+        let res = {
+            let (res, _): (Vec<_>, Vec<_>) = entities
+                .par_iter()
+                .fold(
+                    || (Vec::new(), Vec::new()),
+                    |(mut res, mut checked), e| {
+                        let (ae, (ac, a_col), (at, a_transform), a_physical) = &**e;
 
-                    res.extend(
-                        tree.query(Box2d::new(a_transform.position(), a_col.boundary))
-                            .into_iter()
-                            .filter_map(|(_, a)| {
-                                let (be, (bc, b_col), (bt, b_transform), b_physical) = &*a;
-                                let res = {
-                                    let res = !checked.contains(&(ae, *be))
-                                        && !checked.contains(&(be, *ae));
-
-                                    if res {
+                        res.extend(
+                            tree.query(Box2d::new(a_transform.position(), a_col.boundary))
+                                .into_iter()
+                                .filter_map(|(_, a)| {
+                                    let (be, (bc, b_col), (bt, b_transform), b_physical) = &*a;
+                                    let res = if !checked.contains(&(ae, *be))
+                                        && !checked.contains(&(be, *ae))
+                                    {
                                         Some((
                                             (*ae, *ac, *at),
                                             (*be, *bc, *bt),
@@ -140,20 +139,22 @@ impl PhysicsManager {
                                         ))
                                     } else {
                                         None
-                                    }
-                                };
+                                    };
 
-                                checked.push((ae, *be));
+                                    checked.push((ae, *be));
 
-                                res
-                            }),
-                    );
+                                    res
+                                }),
+                        );
 
-                    (res, checked)
-                },
-            )
-            .flatten()
-            .collect();
+                        (res, checked)
+                    },
+                )
+                .flatten()
+                .collect();
+
+            res
+        };
 
         for ((ae, ac, at), (be, bc, bt), (atr, btr)) in res {
             Self::resolve(ae, bc, bt, btr, cm);
