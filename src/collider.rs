@@ -11,9 +11,9 @@ pub struct Collider {
     pub boundary: f32,
     pub layers: Vec<Id>,
     pub ignore: Vec<Id>,
+    pub collisions: Vec<Id>,
     pub ghost: bool,
     pub active: bool,
-    pub collisions: Vec<Id>,
 }
 
 impl Collider {
@@ -30,9 +30,9 @@ impl Collider {
             boundary,
             layers,
             ignore,
+            collisions: Vec::new(),
             ghost,
             active,
-            collisions: Vec::new(),
         }
     }
 

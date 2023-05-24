@@ -7,9 +7,9 @@ use hex::{
 #[derive(Clone)]
 pub struct Physical {
     pub force: Vec2d,
+    pub active: bool,
     velocity: Option<Vec2d>,
     last_position: Option<Vec2d>,
-    pub active: bool,
 }
 
 impl Physical {
