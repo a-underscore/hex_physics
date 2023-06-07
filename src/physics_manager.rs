@@ -1,4 +1,4 @@
-use crate::{Box2d, Collider, Physical, QuadTree};
+use crate::{quad_tree::Box2d, Collider, Physical, QuadTree};
 use hex::{
     anyhow,
     components::Transform,
