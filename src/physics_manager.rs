@@ -8,7 +8,7 @@ use hex::{
 };
 use rayon::prelude::*;
 use std::{
-    sync::Arc,
+    sync::{Arc, RwLock},
     time::{Duration, Instant},
 };
 
@@ -113,47 +113,44 @@ impl PhysicsManager {
                     .then_some(e)
             })
             .collect();
-        let res = {
-            let (res, _): (Vec<_>, Vec<_>) = entities
+        let res: Vec<_> = {
+            let checked = RwLock::new(Vec::new());
+
+            entities
                 .par_iter()
-                .fold(
-                    || (Vec::new(), Vec::new()),
-                    |(mut res, mut checked), e| {
-                        let (ae, (ac, a_col), (at, a_transform), a_physical) = &**e;
+                .filter_map(|e| {
+                    let (ae, (ac, a_col), (at, a_transform), a_physical) = &**e;
 
-                        res.extend(
-                            tree.query(Box2d::new(a_transform.position(), a_col.boundary))
-                                .into_iter()
-                                .filter_map(|(_, a)| {
-                                    let (be, (bc, b_col), (bt, b_transform), b_physical) = &*a;
-                                    let res = if !checked.contains(&(ae, *be))
-                                        && !checked.contains(&(be, *ae))
-                                    {
-                                        Some((
-                                            (*ae, *ac, *at),
-                                            (*be, *bc, *bt),
-                                            Self::detect(
-                                                (a_col, a_transform, *a_physical),
-                                                (b_col, b_transform, *b_physical),
-                                            )?,
-                                        ))
-                                    } else {
-                                        None
-                                    };
+                    let res: Vec<_> = tree
+                        .query(Box2d::new(a_transform.position(), a_col.boundary))
+                        .into_iter()
+                        .filter_map(|(_, a)| {
+                            let (be, (bc, b_col), (bt, b_transform), b_physical) = &*a;
+                            let res = if !checked.read().ok()?.contains(&(ae, *be))
+                                && !checked.read().ok()?.contains(&(be, *ae))
+                            {
+                                Some((
+                                    (*ae, *ac, *at),
+                                    (*be, *bc, *bt),
+                                    Self::detect(
+                                        (a_col, a_transform, *a_physical),
+                                        (b_col, b_transform, *b_physical),
+                                    )?,
+                                ))
+                            } else {
+                                None
+                            };
 
-                                    checked.push((ae, *be));
+                            checked.write().ok()?.push((ae, *be));
 
-                                    res
-                                }),
-                        );
+                            res
+                        })
+                        .collect();
 
-                        (res, checked)
-                    },
-                )
+                    Some(res)
+                })
                 .flatten()
-                .collect();
-
-            res
+                .collect()
         };
 
         for ((ae, ac, at), (be, bc, bt), (atr, btr)) in res {
