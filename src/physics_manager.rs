@@ -107,9 +107,7 @@ impl PhysicsManager {
 
             entities
                 .par_iter()
-                .filter_map(|e| {
-                    let (ae, (ac, a_col), (at, a_transform), a_physical) = &*e;
-
+                .filter_map(|(ae, (ac, a_col), (at, a_transform), a_physical)| {
                     let res: Vec<_> = entities
                         .iter()
                         .filter_map(|(be, (bc, b_col), (bt, b_transform), b_physical)| {
