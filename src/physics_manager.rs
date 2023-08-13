@@ -1,4 +1,4 @@
-use crate::{quad_tree::Box2d, Collider, Physical, QuadTree};
+use crate::{Collider, Physical};
 use hex::{
     anyhow,
     components::Transform,
@@ -8,7 +8,7 @@ use hex::{
 };
 use rayon::prelude::*;
 use std::{
-    sync::{Arc, RwLock},
+    sync::RwLock,
     time::{Duration, Instant},
 };
 
@@ -18,22 +18,15 @@ pub struct PhysicsManager {
     pub rate: u32,
     pub step_amount: u32,
     pub max_delta: Option<Duration>,
-    pub bounds: (Box2d, usize),
     frame: Instant,
     count: u32,
 }
 
 impl PhysicsManager {
-    pub fn new(
-        rate: u32,
-        step_amount: u32,
-        max_delta: Option<Duration>,
-        bounds: (Box2d, usize),
-    ) -> Self {
+    pub fn new(rate: u32, step_amount: u32, max_delta: Option<Duration>) -> Self {
         Self {
             rate,
             step_amount,
-            bounds,
             max_delta,
             frame: Instant::now(),
             count: 0,
@@ -87,14 +80,12 @@ impl PhysicsManager {
     }
 
     pub fn check_collisions(&self, (em, cm): (&EntityManager, &mut ComponentManager)) {
-        let (boundary, cap) = &self.bounds;
-        let mut tree = QuadTree::new(boundary.clone(), *cap);
         let entities: Vec<_> = em
             .entities
             .keys()
             .cloned()
             .filter_map(|e| {
-                let e = Arc::new((
+                let e = (
                     e,
                     cm.get_id::<Collider>(e, em).and_then(|c| {
                         cm.get_cache::<Collider>(c)
@@ -106,11 +97,9 @@ impl PhysicsManager {
                     })?,
                     cm.get::<Physical>(e, em)
                         .and_then(|p| p.active.then_some(p)),
-                ));
-                let (be, _, (_, b_transform), _) = &*e;
+                );
 
-                tree.insert((b_transform.position(), *be), e.clone())
-                    .then_some(e)
+                Some(e)
             })
             .collect();
         let res: Vec<_> = {
@@ -119,16 +108,17 @@ impl PhysicsManager {
             entities
                 .par_iter()
                 .filter_map(|e| {
-                    let (ae, (ac, a_col), (at, a_transform), a_physical) = &**e;
+                    let (ae, (ac, a_col), (at, a_transform), a_physical) = &*e;
 
-                    let res: Vec<_> = tree
-                        .query(Box2d::new(a_transform.position(), a_col.boundary))
-                        .into_iter()
-                        .filter_map(|(_, a)| {
-                            let (be, (bc, b_col), (bt, b_transform), b_physical) = &*a;
-                            let res = if !checked.read().ok()?.contains(&(ae, *be))
-                                && !checked.read().ok()?.contains(&(be, *ae))
-                            {
+                    let res: Vec<_> = entities
+                        .iter()
+                        .filter_map(|e| {
+                            let (be, (bc, b_col), (bt, b_transform), b_physical) = &*e;
+                            let res = if {
+                                let checked = checked.read().ok()?;
+
+                                !checked.contains(&(ae, *be)) && !checked.contains(&(be, *ae))
+                            } {
                                 Some((
                                     (*ae, *ac, *at),
                                     (*be, *bc, *bt),
