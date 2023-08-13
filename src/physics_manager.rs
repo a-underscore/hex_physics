@@ -112,8 +112,7 @@ impl PhysicsManager {
 
                     let res: Vec<_> = entities
                         .iter()
-                        .filter_map(|e| {
-                            let (be, (bc, b_col), (bt, b_transform), b_physical) = &*e;
+                        .filter_map(|(be, (bc, b_col), (bt, b_transform), b_physical)| {
                             let res = if {
                                 let checked = checked.read().ok()?;
 
