@@ -2,7 +2,7 @@ use crate::{Collider, Physical};
 use hex::{
     anyhow,
     components::Transform,
-    ecs::{ev::Control, system_manager::System, ComponentManager, EntityManager, Ev, Id, Scene},
+    ecs::{ev::Control, system_manager::System, ComponentManager, EntityManager, Ev, Id, Context},
     glium::glutin::event::Event,
     math::Vec2d,
 };
@@ -209,7 +209,7 @@ impl<'a> System<'a> for PhysicsManager {
     fn update(
         &mut self,
         ev: &mut Ev,
-        _: &mut Scene,
+        _: &mut Context,
         (em, cm): (&mut EntityManager, &mut ComponentManager),
     ) -> anyhow::Result<()> {
         if let Ev::Event(Control {
