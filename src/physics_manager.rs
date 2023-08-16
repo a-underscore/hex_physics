@@ -2,7 +2,7 @@ use crate::{Collider, Physical};
 use hex::{
     anyhow,
     components::Transform,
-    ecs::{ev::Control, system_manager::System, ComponentManager, EntityManager, Ev, Id, Context},
+    ecs::{ev::Control, system_manager::System, ComponentManager, Context, EntityManager, Ev, Id},
     glium::glutin::event::Event,
     math::Vec2d,
 };
