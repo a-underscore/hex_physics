@@ -230,10 +230,10 @@ impl<'a> System<'a> for PhysicsManager {
 
             self.frame = now;
 
+            self.clear_collisions((em, cm));
+
             if self.count >= self.rate {
                 self.count = 0;
-
-                self.clear_collisions((em, cm));
 
                 for _ in 0..self.step_amount {
                     self.update_positions(Some(self.step_amount), delta, (em, cm));
