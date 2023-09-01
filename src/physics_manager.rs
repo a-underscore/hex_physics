@@ -7,10 +7,7 @@ use hex::{
     math::Vec2d,
 };
 use rayon::prelude::*;
-use std::{
-    sync::RwLock,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
 pub type Colliders = Vec<(Id, (Id, Collider), Id, Option<Physical>)>;
 
@@ -102,41 +99,41 @@ impl PhysicsManager {
                 Some(e)
             })
             .collect();
-        let res: Vec<_> = {
-            let checked = RwLock::new(Vec::new());
-
+        let (res, _): (Vec<_>, Vec<_>) = {
             entities
                 .par_iter()
-                .filter_map(|(ae, (ac, a_col), (at, a_transform), a_physical)| {
-                    let res: Vec<_> = entities
-                        .iter()
-                        .filter_map(|(be, (bc, b_col), (bt, b_transform), b_physical)| {
-                            let res = {
-                                let checked = checked.read().ok()?;
+                .fold(
+                    || (Vec::new(), Vec::new()),
+                    |(mut col, mut checked), (ae, (ac, a_col), (at, a_transform), a_physical)| {
+                        let res: Vec<_> = entities
+                            .iter()
+                            .filter_map(|(be, (bc, b_col), (bt, b_transform), b_physical)| {
+                                let res = if !checked.contains(&(ae, *be))
+                                    && !checked.contains(&(be, *ae))
+                                {
+                                    Some((
+                                        (*ae, *ac, *at),
+                                        (*be, *bc, *bt),
+                                        Self::detect(
+                                            (a_col, a_transform, *a_physical),
+                                            (b_col, b_transform, *b_physical),
+                                        )?,
+                                    ))
+                                } else {
+                                    None
+                                };
 
-                                !checked.contains(&(ae, *be)) && !checked.contains(&(be, *ae))
-                            };
-                            let res = if res {
-                                Some((
-                                    (*ae, *ac, *at),
-                                    (*be, *bc, *bt),
-                                    Self::detect(
-                                        (a_col, a_transform, *a_physical),
-                                        (b_col, b_transform, *b_physical),
-                                    )?,
-                                ))
-                            } else {
-                                None
-                            };
+                                checked.push((ae, *be));
 
-                            checked.write().ok()?.push((ae, *be));
+                                res
+                            })
+                            .collect();
 
-                            res
-                        })
-                        .collect();
+                        col.extend(res);
 
-                    Some(res)
-                })
+                        (col, checked)
+                    },
+                )
                 .flatten()
                 .collect()
         };
