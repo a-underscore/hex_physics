@@ -186,12 +186,6 @@ impl Collider {
                 }
 
                 if next == first {
-                    println!(
-                        "{:?} {:?}",
-                        points.iter().map(|n| n.0).collect::<Vec<_>>(),
-                        new_points.iter().map(|n| n.0).collect::<Vec<_>>()
-                    );
-
                     return Some(new_points);
                 } else {
                     current = next;
