@@ -31,8 +31,8 @@ impl PhysicsManager {
     }
 
     pub fn detect(
-        (ac, at, ap): (Collider, &Transform, Option<&Physical>),
-        (bc, bt, bp): (Collider, &Transform, Option<&Physical>),
+        (ac, at, ap): (&Collider, &Transform, Option<&Physical>),
+        (bc, bt, bp): (&Collider, &Transform, Option<&Physical>),
     ) -> Option<(Option<Vec2d>, Option<Vec2d>)> {
         if ac.layers.iter().any(|a| bc.layers.contains(a))
             && !(ac.ignore.iter().any(|a| bc.layers.contains(a))
@@ -82,18 +82,27 @@ impl PhysicsManager {
             .keys()
             .cloned()
             .filter_map(|e| {
+                let (c, collider) = cm.get_id::<Collider>(e, em).and_then(|c| {
+                    cm.get_cache::<Collider>(c)
+                        .and_then(|col| col.active.then_some((c, col.clone())))
+                })?;
+                let (t, transform) = cm.get_id::<Transform>(e, em).and_then(|t| {
+                    cm.get_cache::<Transform>(t)
+                        .and_then(|transform| transform.active.then_some((t, transform.clone())))
+                })?;
+
                 let e = (
                     e,
-                    cm.get_id::<Collider>(e, em).and_then(|c| {
-                        cm.get_cache::<Collider>(c)
-                            .and_then(|col| col.active.then_some((c, col)))
-                    })?,
-                    cm.get_id::<Transform>(e, em).and_then(|t| {
-                        cm.get_cache::<Transform>(t)
-                            .and_then(|transform| transform.active.then_some((t, transform)))
-                    })?,
                     cm.get::<Physical>(e, em)
-                        .and_then(|p| p.active.then_some(p)),
+                        .and_then(|p| p.active.then_some(p))
+                        .and_then(|physical| {
+                            Some((
+                                (c, collider.convex_hull(&transform, physical)?),
+                                (t, transform.clone()),
+                                Some(physical),
+                            ))
+                        })
+                        .unwrap_or(((c, collider), (t, transform), None)),
                 );
 
                 Some(e)
@@ -104,10 +113,10 @@ impl PhysicsManager {
                 .par_iter()
                 .fold(
                     || (Vec::new(), Vec::new()),
-                    |(mut col, mut checked), (ae, (ac, a_col), (at, a_transform), a_physical)| {
+                    |(mut col, mut checked), (ae, ((ac, a_col), (at, a_transform), a_physical))| {
                         let res: Vec<_> = entities
                             .iter()
-                            .filter_map(|(be, (bc, b_col), (bt, b_transform), b_physical)| {
+                            .filter_map(|(be, ((bc, b_col), (bt, b_transform), b_physical))| {
                                 let res = if !checked.contains(&(ae, *be))
                                     && !checked.contains(&(be, *ae))
                                 {
@@ -115,34 +124,8 @@ impl PhysicsManager {
                                         (*ae, *ac, *at),
                                         (*be, *bc, *bt),
                                         Self::detect(
-                                            (a_physical)
-                                                .and_then(|a_physical| {
-                                                    Some((
-                                                        a_col
-                                                            .convex_hull(a_transform, a_physical)?,
-                                                        *a_transform,
-                                                        Some(a_physical),
-                                                    ))
-                                                })
-                                                .unwrap_or((
-                                                    (*a_col).clone(),
-                                                    *a_transform,
-                                                    *a_physical,
-                                                )),
-                                            (b_physical)
-                                                .and_then(|b_physical| {
-                                                    Some((
-                                                        b_col
-                                                            .convex_hull(b_transform, b_physical)?,
-                                                        *b_transform,
-                                                        Some(b_physical),
-                                                    ))
-                                                })
-                                                .unwrap_or((
-                                                    (*b_col).clone(),
-                                                    *b_transform,
-                                                    *b_physical,
-                                                )),
+                                            (a_col, a_transform, *a_physical),
+                                            (b_col, b_transform, *b_physical),
                                         )?,
                                     ))
                                 } else {
