@@ -39,7 +39,7 @@ impl PhysicsManager {
                 || bc.ignore.iter().any(|b| ac.layers.contains(b)))
             && (at.position() - bt.position()).magnitude() <= ac.boundary + bc.boundary
         {
-            if let Some(min_translation) = ac.intersecting(at, &bc, bt) {
+            if let Some(min_translation) = ac.intersecting(at, bc, bt) {
                 return Some(
                     (!(ac.ghost || bc.ghost))
                         .then(|| {
