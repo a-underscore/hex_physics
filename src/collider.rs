@@ -167,32 +167,34 @@ impl Collider {
                     .chain(points.iter().cloned().map(|p| p - position_diff))
                     .collect();
 
-                points.sort_by(|p1, p2| p2.x().total_cmp(&p1.y()));
+                points.sort_by(|p1, p2| p1.x().total_cmp(&p2.x()));
 
                 points
             };
+            let (mut new_points, mut points) = points
+                .split_first()
+                .map(|(f, points)| (vec![*f], points.to_owned()))?;
 
-            let first = *points.first()?;
-            let mut points = vec![first];
-            let mut next: Option<(Vec2d, f32)> = None;
+            loop {
+                let previous = *new_points.last()?;
+                let mut next = None;
 
-            while next.map(|(n, _)| n != first).unwrap_or(true) {
-                let previous = *points.last()?;
-
-                for p in &points {
+                for (i, p) in points.iter().enumerate() {
                     let z1 = cross_z(previous, *p);
 
-                    if next.map(|(_, z2)| z1 < z2).unwrap_or(true) {
-                        next = Some((*p, z1));
+                    if next.map(|(_, _, z2)| z1 < z2).unwrap_or(true) {
+                        next = Some((i, *p, z1));
                     }
                 }
 
-                if let Some((n, _)) = next {
-                    points.push(n);
+                if let Some((i, n, _)) = next {
+                    points.remove(i);
+
+                    new_points.push(n);
+                } else {
+                    return Some(new_points);
                 }
             }
-
-            Some(points)
         }
 
         Some(Self {
