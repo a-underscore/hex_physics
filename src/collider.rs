@@ -180,14 +180,14 @@ impl Collider {
                 let mut next = None;
 
                 for (i, p) in points.iter().enumerate() {
-                    let z1 = cross_z(previous, *p);
+                    let z = cross_z(previous, *p);
 
-                    if next.map(|(_, _, z2)| z1 < z2).unwrap_or(true) {
-                        next = Some((i, *p, z1));
+                    if z < 0.0 {
+                        next = Some((i, *p));
                     }
                 }
 
-                if let Some((i, n, _)) = next {
+                if let Some((i, n)) = next {
                     points.remove(i);
 
                     new_points.push(n);
