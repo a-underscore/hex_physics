@@ -1,3 +1,4 @@
+use crate::Physical;
 use hex::{
     components::Transform,
     ecs::{component_manager::Component, Id},
@@ -151,6 +152,56 @@ impl Collider {
         }
 
         min.map(|(m, a)| a.normal() * m)
+    }
+
+    pub fn convex_hull(&self, transform: &Transform, physical: &Physical) -> Option<Collider> {
+        fn cross_z(a: Vec2d, b: Vec2d) -> f32 {
+            a.x() * b.y() - a.y() * b.x()
+        }
+
+        fn convex_hull_inner(points: &Vec<Vec2d>, position_diff: Vec2d) -> Option<Vec<Vec2d>> {
+            let points = {
+                let mut points: Vec<_> = points
+                    .clone()
+                    .into_iter()
+                    .chain(points.iter().cloned().map(|p| p - position_diff))
+                    .collect();
+
+                points.sort_by(|p1, p2| p2.x().total_cmp(&p1.y()));
+
+                points
+            };
+
+            let first = *points.first()?;
+            let mut points = vec![first];
+            let mut next: Option<(Vec2d, f32)> = None;
+
+            while next.map(|(n, _)| n != first).unwrap_or(true) {
+                let previous = *points.last()?;
+
+                for p in &points {
+                    let z1 = cross_z(previous, *p);
+
+                    if next.map(|(_, z2)| z1 < z2).unwrap_or(true) {
+                        next = Some((*p, z1));
+                    }
+                }
+
+                if let Some((n, _)) = next {
+                    points.push(n);
+                }
+            }
+
+            Some(points)
+        }
+
+        Some(Self {
+            points: convex_hull_inner(
+                &self.points,
+                transform.position() - physical.last_position()?,
+            )?,
+            ..self.clone()
+        })
     }
 }
 

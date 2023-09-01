@@ -22,8 +22,8 @@ impl Physical {
         }
     }
 
-    pub fn last_position(&self) -> Vec2d {
-        self.last_position.unwrap_or_default()
+    pub fn last_position(&self) -> Option<Vec2d> {
+        self.last_position
     }
 
     pub fn set_last_position(&mut self, lp: Vec2d) {

@@ -31,15 +31,15 @@ impl PhysicsManager {
     }
 
     pub fn detect(
-        (ac, at, ap): (&Collider, &Transform, Option<&Physical>),
-        (bc, bt, bp): (&Collider, &Transform, Option<&Physical>),
+        (ac, at, ap): (Collider, &Transform, Option<&Physical>),
+        (bc, bt, bp): (Collider, &Transform, Option<&Physical>),
     ) -> Option<(Option<Vec2d>, Option<Vec2d>)> {
         if ac.layers.iter().any(|a| bc.layers.contains(a))
             && !(ac.ignore.iter().any(|a| bc.layers.contains(a))
                 || bc.ignore.iter().any(|b| ac.layers.contains(b)))
             && (at.position() - bt.position()).magnitude() <= ac.boundary + bc.boundary
         {
-            if let Some(min_translation) = ac.intersecting(at, bc, bt) {
+            if let Some(min_translation) = ac.intersecting(at, &bc, bt) {
                 return Some(
                     (!(ac.ghost || bc.ghost))
                         .then(|| {
@@ -115,8 +115,34 @@ impl PhysicsManager {
                                         (*ae, *ac, *at),
                                         (*be, *bc, *bt),
                                         Self::detect(
-                                            (a_col, a_transform, *a_physical),
-                                            (b_col, b_transform, *b_physical),
+                                            (a_physical)
+                                                .and_then(|a_physical| {
+                                                    Some((
+                                                        a_col
+                                                            .convex_hull(a_transform, a_physical)?,
+                                                        *a_transform,
+                                                        Some(a_physical),
+                                                    ))
+                                                })
+                                                .unwrap_or((
+                                                    (*a_col).clone(),
+                                                    *a_transform,
+                                                    *a_physical,
+                                                )),
+                                            (b_physical)
+                                                .and_then(|b_physical| {
+                                                    Some((
+                                                        b_col
+                                                            .convex_hull(b_transform, b_physical)?,
+                                                        *b_transform,
+                                                        Some(b_physical),
+                                                    ))
+                                                })
+                                                .unwrap_or((
+                                                    (*b_col).clone(),
+                                                    *b_transform,
+                                                    *b_physical,
+                                                )),
                                         )?,
                                     ))
                                 } else {
@@ -195,7 +221,9 @@ impl PhysicsManager {
                         .and_then(|p| p.active.then_some(p))?,
                 ))
             }) {
-                p.set_velocity((t.position() - p.last_position()) / delta.as_secs_f32());
+                p.set_velocity(
+                    (t.position() - p.last_position().unwrap_or_default()) / delta.as_secs_f32(),
+                );
                 p.set_last_position(t.position());
             }
         }
