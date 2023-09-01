@@ -192,6 +192,8 @@ impl Collider {
 
                     new_points.push(n);
                 } else {
+                    println!("{:?}", new_points.iter().map(|n| n.0).collect::<Vec<_>>());
+
                     return Some(new_points);
                 }
             }
