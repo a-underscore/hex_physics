@@ -84,18 +84,18 @@ impl Collider {
         b: &Self,
         b_transform: &Transform,
     ) -> Option<Vec2d> {
-        let a_points = self
+        let a_points: Vec<_> = self
             .points
             .iter()
             .cloned()
             .map(|p| (transform.matrix() * (p, 1.0)).0)
-            .collect::<Vec<_>>();
-        let b_points = b
+            .collect();
+        let b_points: Vec<_> = b
             .points
             .iter()
             .cloned()
             .map(|p| (b_transform.matrix() * (p, 1.0)).0)
-            .collect::<Vec<_>>();
+            .collect();
 
         let mut min = None;
 
@@ -159,11 +159,11 @@ impl Collider {
             a.x() * b.y() - a.y() * b.x()
         }
 
-        fn convex_hull_inner(points: &Vec<Vec2d>, position_diff: Vec2d) -> Option<Vec<Vec2d>> {
+        fn convex_hull_inner(points: &[Vec2d], position_diff: Vec2d) -> Option<Vec<Vec2d>> {
             let points = {
                 let mut points: Vec<_> = points
-                    .clone()
-                    .into_iter()
+                    .iter()
+                    .copied()
                     .chain(points.iter().cloned().map(|p| p - position_diff))
                     .collect();
 
