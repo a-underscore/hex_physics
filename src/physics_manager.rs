@@ -44,8 +44,8 @@ impl PhysicsManager {
                     (!(ac.ghost || bc.ghost))
                         .then(|| {
                             (
-                                ap.as_ref().is_some().then_some(-min_translation),
-                                bp.as_ref().is_some().then_some(min_translation),
+                                ap.is_some().then_some(-min_translation),
+                                bp.is_some().then_some(min_translation),
                             )
                         })
                         .unwrap_or_default(),
