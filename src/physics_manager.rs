@@ -78,9 +78,7 @@ impl PhysicsManager {
 
     pub fn check_collisions(&self, (em, cm): (&EntityManager, &mut ComponentManager)) {
         let entities: Vec<_> = em
-            .entities
-            .keys()
-            .cloned()
+            .entities()
             .filter_map(|e| {
                 let (c, collider) = cm.get_id::<Collider>(e, em).and_then(|c| {
                     cm.get_cache::<Collider>(c)
@@ -159,7 +157,7 @@ impl PhysicsManager {
         delta: Duration,
         (em, cm): (&mut EntityManager, &mut ComponentManager),
     ) {
-        for e in em.entities.keys().cloned() {
+        for e in em.entities() {
             if let Some((force, t)) = cm.get::<Physical>(e, em).cloned().and_then(|p| {
                 Some((
                     p.active.then_some(p.force)?,
@@ -181,7 +179,7 @@ impl PhysicsManager {
     }
 
     pub fn clear_collisions(&self, (em, cm): (&mut EntityManager, &mut ComponentManager)) {
-        for e in em.entities.keys().cloned() {
+        for e in em.entities() {
             if let Some(col) = cm
                 .get_mut::<Collider>(e, em)
                 .and_then(|col| col.active.then_some(col))
@@ -196,7 +194,7 @@ impl PhysicsManager {
         delta: Duration,
         (em, cm): (&mut EntityManager, &mut ComponentManager),
     ) {
-        for e in em.entities.keys().cloned() {
+        for e in em.entities() {
             if let Some((t, p)) = cm.get::<Transform>(e, em).cloned().and_then(|t| {
                 Some((
                     t.active.then_some(t)?,
