@@ -2,7 +2,6 @@ use crate::Physical;
 use hex::{
     components::Transform,
     ecs::{component_manager::Component, Id},
-    id,
     math::Vec2d,
 };
 
@@ -207,8 +206,4 @@ impl Collider {
     }
 }
 
-impl Component for Collider {
-    fn id() -> Id {
-        id!()
-    }
-}
+impl Component for Collider {}

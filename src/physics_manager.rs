@@ -213,7 +213,7 @@ impl PhysicsManager {
     }
 }
 
-impl<'a> System<'a> for PhysicsManager {
+impl System for PhysicsManager {
     fn update(
         &mut self,
         ev: &mut Ev,
