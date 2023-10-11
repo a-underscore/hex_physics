@@ -56,21 +56,13 @@ impl PhysicsManager {
         None
     }
 
-    pub fn resolve(
-        other_e: Id,
-        cache_collider: Id,
-        cache_transform: Id,
-        tr: Option<Vec2d>,
-        cm: &mut ComponentManager,
-    ) {
-        if let Some(collider) = cm.get_cache_mut::<Collider>(cache_collider) {
+    pub fn resolve(e: Id, other_e: Id, tr: Option<Vec2d>, cm: &mut ComponentManager) {
+        if let Some(collider) = cm.get_mut::<Collider>(e) {
             if !collider.collisions.contains(&other_e) {
                 collider.collisions.push(other_e);
             }
 
-            if let Some((tr, t)) =
-                tr.and_then(|tr| Some((tr, cm.get_cache_mut::<Transform>(cache_transform)?)))
-            {
+            if let Some((tr, t)) = tr.and_then(|tr| Some((tr, cm.get_mut::<Transform>(e)?))) {
                 t.set_position(t.position() + tr);
             }
         }
@@ -80,27 +72,25 @@ impl PhysicsManager {
         let entities: Vec<_> = em
             .entities()
             .filter_map(|e| {
-                let (c, collider) = cm.get_id::<Collider>(e, em).and_then(|c| {
-                    cm.get_cache::<Collider>(c)
-                        .and_then(|col| col.active.then_some((c, col.clone())))
-                })?;
-                let (t, transform) = cm.get_id::<Transform>(e, em).and_then(|t| {
-                    cm.get_cache::<Transform>(t)
-                        .and_then(|transform| transform.active.then_some((t, transform.clone())))
-                })?;
+                let collider = cm
+                    .get::<Collider>(e)
+                    .and_then(|c| c.active.then_some(c.clone()))?;
+                let transform = cm
+                    .get::<Transform>(e)
+                    .and_then(|t| t.active.then_some(t.clone()))?;
 
                 let e = (
                     e,
-                    cm.get::<Physical>(e, em)
+                    cm.get::<Physical>(e)
                         .and_then(|p| p.active.then_some(p))
                         .and_then(|physical| {
                             Some((
-                                (c, collider.convex_hull(&transform, physical)?),
-                                (t, transform.clone()),
+                                (collider.convex_hull(&transform, physical)?),
+                                transform.clone(),
                                 Some(physical),
                             ))
                         })
-                        .unwrap_or(((c, collider), (t, transform), None)),
+                        .unwrap_or((collider, transform, None)),
                 );
 
                 Some(e)
@@ -111,16 +101,16 @@ impl PhysicsManager {
                 .par_iter()
                 .fold(
                     || (Vec::new(), Vec::new()),
-                    |(mut col, mut checked), (ae, ((ac, a_col), (at, a_transform), a_physical))| {
+                    |(mut col, mut checked), (ae, (a_col, a_transform, a_physical))| {
                         let res: Vec<_> = entities
                             .iter()
-                            .filter_map(|(be, ((bc, b_col), (bt, b_transform), b_physical))| {
+                            .filter_map(|(be, (b_col, b_transform, b_physical))| {
                                 let res = if !checked.contains(&(ae, *be))
                                     && !checked.contains(&(be, *ae))
                                 {
                                     Some((
-                                        (*ae, *ac, *at),
-                                        (*be, *bc, *bt),
+                                        *ae,
+                                        *be,
                                         Self::detect(
                                             (a_col, a_transform, *a_physical),
                                             (b_col, b_transform, *b_physical),
@@ -145,9 +135,9 @@ impl PhysicsManager {
                 .collect()
         };
 
-        for ((ae, ac, at), (be, bc, bt), (atr, btr)) in res {
-            Self::resolve(ae, bc, bt, btr, cm);
-            Self::resolve(be, ac, at, atr, cm);
+        for (ae, be, (atr, btr)) in res {
+            Self::resolve(ae, be, atr, cm);
+            Self::resolve(be, ae, btr, cm);
         }
     }
 
@@ -158,10 +148,10 @@ impl PhysicsManager {
         (em, cm): (&mut EntityManager, &mut ComponentManager),
     ) {
         for e in em.entities() {
-            if let Some((force, t)) = cm.get::<Physical>(e, em).cloned().and_then(|p| {
+            if let Some((force, t)) = cm.get::<Physical>(e).cloned().and_then(|p| {
                 Some((
                     p.active.then_some(p.force)?,
-                    cm.get_mut::<Transform>(e, em)
+                    cm.get_mut::<Transform>(e)
                         .and_then(|t| t.active.then_some(t))?,
                 ))
             }) {
@@ -181,7 +171,7 @@ impl PhysicsManager {
     pub fn clear_collisions(&self, (em, cm): (&mut EntityManager, &mut ComponentManager)) {
         for e in em.entities() {
             if let Some(col) = cm
-                .get_mut::<Collider>(e, em)
+                .get_mut::<Collider>(e)
                 .and_then(|col| col.active.then_some(col))
             {
                 col.collisions.clear()
@@ -195,10 +185,10 @@ impl PhysicsManager {
         (em, cm): (&mut EntityManager, &mut ComponentManager),
     ) {
         for e in em.entities() {
-            if let Some((t, p)) = cm.get::<Transform>(e, em).cloned().and_then(|t| {
+            if let Some((t, p)) = cm.get::<Transform>(e).cloned().and_then(|t| {
                 Some((
                     t.active.then_some(t)?,
-                    cm.get_mut::<Physical>(e, em)
+                    cm.get_mut::<Physical>(e)
                         .and_then(|p| p.active.then_some(p))?,
                 ))
             }) {
