@@ -79,7 +79,7 @@ impl PhysicsManager {
                     .get::<Transform>(e)
                     .and_then(|t| t.active.then_some(t.clone()))?;
 
-                let e = (
+                Some((
                     e,
                     cm.get::<Physical>(e)
                         .and_then(|p| p.active.then_some(p))
@@ -91,9 +91,7 @@ impl PhysicsManager {
                             ))
                         })
                         .unwrap_or((collider, transform, None)),
-                );
-
-                Some(e)
+                ))
             })
             .collect();
         let (res, _): (Vec<_>, Vec<_>) = {
