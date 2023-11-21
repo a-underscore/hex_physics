@@ -106,14 +106,11 @@ impl PhysicsManager {
                                 let res = if !checked.contains(&(ae, *be))
                                     && !checked.contains(&(be, *ae))
                                 {
-                                    Some((
-                                        *ae,
-                                        *be,
-                                        Self::detect(
-                                            (a_col, a_transform, *a_physical),
-                                            (b_col, b_transform, *b_physical),
-                                        )?,
-                                    ))
+                                    Self::detect(
+                                        (a_col, a_transform, *a_physical),
+                                        (b_col, b_transform, *b_physical),
+                                    )
+                                    .map(|tr| (*ae, *be, tr))
                                 } else {
                                     None
                                 };
