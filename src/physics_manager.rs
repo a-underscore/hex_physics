@@ -103,21 +103,19 @@ impl PhysicsManager {
                         let res: Vec<_> = entities
                             .iter()
                             .filter_map(|(be, (b_col, b_transform, b_physical))| {
-                                let res = if !checked.contains(&(ae, *be))
-                                    && !checked.contains(&(be, *ae))
-                                {
-                                    Self::detect(
+                                if !checked.contains(&(ae, *be)) && !checked.contains(&(be, *ae)) {
+                                    let res = Self::detect(
                                         (a_col, a_transform, *a_physical),
                                         (b_col, b_transform, *b_physical),
                                     )
-                                    .map(|tr| (*ae, *be, tr))
+                                    .map(|tr| (*ae, *be, tr));
+
+                                    checked.push((ae, *be));
+
+                                    res
                                 } else {
                                     None
-                                };
-
-                                checked.push((ae, *be));
-
-                                res
+                                }
                             })
                             .collect();
 
