@@ -7,7 +7,10 @@ use hex::{
     math::Vec2d,
 };
 use rayon::prelude::*;
-use std::time::{Duration, Instant};
+use std::{
+    sync::Mutex,
+    time::{Duration, Instant},
+};
 
 pub type Colliders = Vec<(Id, (Id, Collider), Id, Option<Physical>)>;
 
@@ -94,41 +97,42 @@ impl PhysicsManager {
                 ))
             })
             .collect();
-        let (res, _): (Vec<_>, Vec<_>) = {
-            entities
-                .par_iter()
-                .fold(
-                    || (Vec::new(), Vec::new()),
-                    |(mut col, mut checked), (ae, (a_col, a_transform, a_physical))| {
-                        let res: Vec<_> = entities
-                            .iter()
-                            .filter_map(|(be, (b_col, b_transform, b_physical))| {
-                                if !checked.contains(&(ae, *be)) && !checked.contains(&(be, *ae)) {
-                                    let res = Self::detect(
-                                        (a_col, a_transform, *a_physical),
-                                        (b_col, b_transform, *b_physical),
-                                    )
-                                    .map(|tr| (*ae, *be, tr));
+        let checked = Mutex::new(Vec::new());
+        let col: Vec<_> = entities
+            .par_iter()
+            .map(|(ae, (a_col, a_transform, a_physical))| {
+                let res: Vec<_> = entities
+                    .iter()
+                    .filter_map(|(be, (b_col, b_transform, b_physical))| {
+                        let res = {
+                            let mut checked = checked.lock().ok()?;
 
-                                    checked.push((ae, *be));
+                            if !checked.contains(&(ae, *be)) && !checked.contains(&(be, *ae)) {
+                                checked.push((ae, *be));
 
-                                    res
-                                } else {
-                                    None
-                                }
-                            })
-                            .collect();
+                                true
+                            } else {
+                                false
+                            }
+                        };
+                        if res {
+                            Self::detect(
+                                (a_col, a_transform, *a_physical),
+                                (b_col, b_transform, *b_physical),
+                            )
+                            .map(|tr| (*ae, *be, tr))
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
 
-                        col.extend(res);
+                res
+            })
+            .flatten()
+            .collect();
 
-                        (col, checked)
-                    },
-                )
-                .flatten()
-                .collect()
-        };
-
-        for (ae, be, (atr, btr)) in res {
+        for (ae, be, (atr, btr)) in col {
             Self::resolve(ae, be, atr, cm);
             Self::resolve(be, ae, btr, cm);
         }
