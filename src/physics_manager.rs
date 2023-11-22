@@ -140,14 +140,11 @@ impl PhysicsManager {
                                 };
 
                                 if res {
-                                    Some((
-                                        (ae, ac, at),
-                                        (*be, *bc, *bt),
-                                        Self::detect(
-                                            (&a_col, &a_transform, &a_physical),
-                                            (b_col, b_transform, b_physical),
-                                        )?,
-                                    ))
+                                    Self::detect(
+                                        (&a_col, &a_transform, &a_physical),
+                                        (b_col, b_transform, b_physical),
+                                    )
+                                    .map(|tr| ((ae, ac, at), (*be, *bc, *bt), tr))
                                 } else {
                                     None
                                 }
