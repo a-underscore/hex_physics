@@ -123,7 +123,8 @@ impl PhysicsManager {
                         .into_iter()
                         .filter_map(|(_, a)| {
                             let (be, (bc, b_col), (bt, b_transform), b_physical) = &*a;
-                            let res = {
+
+                            {
                                 let res = {
                                     let mut checked = checked.lock().ok()?;
 
@@ -150,9 +151,7 @@ impl PhysicsManager {
                                 } else {
                                     None
                                 }
-                            };
-
-                            res
+                            }
                         })
                         .collect::<Vec<_>>(),
                 )
