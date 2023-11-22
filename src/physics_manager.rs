@@ -107,8 +107,8 @@ impl PhysicsManager {
                         let res = {
                             let mut checked = checked.lock().ok()?;
 
-                            if !checked.contains(&(ae, *be)) && !checked.contains(&(be, *ae)) {
-                                checked.push((ae, *be));
+                            if !checked.contains(&(*ae, *be)) && !checked.contains(&(*be, *ae)) {
+                                checked.push((*ae, *be));
 
                                 true
                             } else {
