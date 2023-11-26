@@ -8,7 +8,7 @@ use hex::{
 };
 use rayon::prelude::*;
 use std::{
-    sync::{Arc, Mutex},
+    sync::{Arc, RwLock},
     time::{Duration, Instant},
 };
 
@@ -112,7 +112,7 @@ impl PhysicsManager {
                     .then(|| e.clone())
             })
             .collect();
-        let checked = Mutex::new(Vec::new());
+        let checked = RwLock::new(Vec::new());
 
         for ((ae, ac, at), (be, bc, bt), (ghost, (atr, btr))) in entities
             .par_iter()
@@ -126,12 +126,15 @@ impl PhysicsManager {
 
                             {
                                 let res = {
-                                    let mut checked = checked.lock().ok()?;
+                                    let res = {
+                                        let checked = checked.read().ok()?;
 
-                                    if !checked.contains(&(ae, *be))
-                                        && !checked.contains(&(*be, ae))
-                                    {
-                                        checked.push((ae, *be));
+                                        !checked.contains(&(ae, *be))
+                                            && !checked.contains(&(*be, ae))
+                                    };
+
+                                    if res {
+                                        checked.write().ok()?.push((ae, *be));
 
                                         true
                                     } else {
