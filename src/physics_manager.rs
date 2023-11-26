@@ -8,7 +8,7 @@ use hex::{
 };
 use rayon::prelude::*;
 use std::{
-    sync::Mutex,
+    sync::RwLock,
     time::{Duration, Instant},
 };
 
@@ -97,7 +97,7 @@ impl PhysicsManager {
                 ))
             })
             .collect();
-        let checked = Mutex::new(Vec::new());
+        let checked = RwLock::new(Vec::new());
         let col: Vec<_> = entities
             .par_iter()
             .map(|(ae, (a_col, a_transform, a_physical))| {
@@ -105,10 +105,12 @@ impl PhysicsManager {
                     .iter()
                     .filter_map(|(be, (b_col, b_transform, b_physical))| {
                         let res = {
-                            let mut checked = checked.lock().ok()?;
+                            if {
+                                let checked = checked.read().ok()?;
 
-                            if !checked.contains(&(*ae, *be)) && !checked.contains(&(*be, *ae)) {
-                                checked.push((*ae, *be));
+                                !checked.contains(&(*ae, *be)) && !checked.contains(&(*be, *ae))
+                            } {
+                                checked.write().ok()?.push((*ae, *be));
 
                                 true
                             } else {
