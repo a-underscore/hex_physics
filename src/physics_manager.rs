@@ -105,11 +105,12 @@ impl PhysicsManager {
                     .iter()
                     .filter_map(|(be, (b_col, b_transform, b_physical))| {
                         let res = {
-                            if {
+                            let res = {
                                 let checked = checked.read().ok()?;
 
                                 !checked.contains(&(*ae, *be)) && !checked.contains(&(*be, *ae))
-                            } {
+                            };
+                            if res {
                                 checked.write().ok()?.push((*ae, *be));
 
                                 true
