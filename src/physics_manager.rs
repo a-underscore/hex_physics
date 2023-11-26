@@ -110,6 +110,7 @@ impl PhysicsManager {
 
                                 !checked.contains(&(*ae, *be)) && !checked.contains(&(*be, *ae))
                             };
+
                             if res {
                                 checked.write().ok()?.push((*ae, *be));
 
@@ -118,6 +119,7 @@ impl PhysicsManager {
                                 false
                             }
                         };
+
                         if res {
                             Self::detect(
                                 (a_col, a_transform, *a_physical),
