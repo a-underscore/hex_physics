@@ -107,9 +107,10 @@ impl PhysicsManager {
                     })?,
                     cm.get::<Physical>(e, em).cloned(),
                 );
+                let e = Arc::new(e.clone());
 
-                tree.insert((b_transform.position(), be), Arc::new(e.clone()))
-                    .then(|| e.clone())
+                tree.insert((b_transform.position(), be), e.clone())
+                    .then_some(e)
             })
             .collect();
         let checked = RwLock::new(Vec::new());
@@ -117,7 +118,9 @@ impl PhysicsManager {
         for ((ae, ac, at), (be, bc, bt), (ghost, (atr, btr))) in entities
             .par_iter()
             .cloned()
-            .filter_map(|(ae, (ac, a_col), (at, a_transform), a_physical)| {
+            .filter_map(|e| {
+                let (ae, (ac, a_col), (at, a_transform), a_physical) = &*e;
+
                 Some(
                     tree.query(Box2d::new(a_transform.position(), a_col.boundary))
                         .into_iter()
@@ -129,12 +132,12 @@ impl PhysicsManager {
                                     let res = {
                                         let checked = checked.read().ok()?;
 
-                                        !checked.contains(&(ae, *be))
-                                            && !checked.contains(&(*be, ae))
+                                        !checked.contains(&(*ae, *be))
+                                            && !checked.contains(&(*be, *ae))
                                     };
 
                                     if res {
-                                        checked.write().ok()?.push((ae, *be));
+                                        checked.write().ok()?.push((*ae, *be));
 
                                         true
                                     } else {
@@ -147,7 +150,7 @@ impl PhysicsManager {
                                         (&a_col, &a_transform, &a_physical),
                                         (b_col, b_transform, b_physical),
                                     )
-                                    .map(|tr| ((ae, ac, at), (*be, *bc, *bt), tr))
+                                    .map(|tr| ((*ae, *ac, *at), (*be, *bc, *bt), tr))
                                 } else {
                                     None
                                 }
