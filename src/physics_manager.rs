@@ -45,7 +45,7 @@ impl PhysicsManager {
             if let Some(min_translation) = ac.intersecting(at, bc, bt) {
                 return Some(
                     (!(ac.ghost || bc.ghost))
-                        .then(|| {
+                        .then_some({
                             (
                                 ap.is_some().then_some(-min_translation),
                                 bp.is_some().then_some(min_translation),
