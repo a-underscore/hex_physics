@@ -49,18 +49,18 @@ impl PhysicsManager {
             && !ac.ignore.iter().any(|a| bc.layers.contains(a))
             && !bc.ignore.iter().any(|b| ac.layers.contains(b))
         {
-            if let Some(min_translation) = ac.intersecting(at, bc, bt) {
-                return Some((
-                    ac.ghost || bc.ghost,
-                    (
-                        ap.as_ref().map(|_| -min_translation),
-                        bp.as_ref().map(|_| min_translation),
-                    ),
-                ));
-            }
-        }
+            let min_translation = ac.intersecting(at, bc, bt)?;
 
-        None
+            Some((
+                ac.ghost || bc.ghost,
+                (
+                    ap.as_ref().map(|_| -min_translation),
+                    bp.as_ref().map(|_| min_translation),
+                ),
+            ))
+        } else {
+            None
+        }
     }
 
     pub fn resolve(
