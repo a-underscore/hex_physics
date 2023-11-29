@@ -42,21 +42,21 @@ impl PhysicsManager {
                 || bc.ignore.iter().any(|b| ac.layers.contains(b)))
             && (at.position() - bt.position()).magnitude() <= ac.boundary + bc.boundary
         {
-            if let Some(min_translation) = ac.intersecting(at, bc, bt) {
-                return Some(
-                    (!(ac.ghost || bc.ghost))
-                        .then_some({
-                            (
-                                ap.is_some().then_some(-min_translation),
-                                bp.is_some().then_some(min_translation),
-                            )
-                        })
-                        .unwrap_or_default(),
-                );
-            }
-        }
+            let min_translation = ac.intersecting(at, bc, bt)?;
 
-        None
+            Some(
+                (!(ac.ghost || bc.ghost))
+                    .then_some({
+                        (
+                            ap.is_some().then_some(-min_translation),
+                            bp.is_some().then_some(min_translation),
+                        )
+                    })
+                    .unwrap_or_default(),
+            )
+        } else {
+            None
+        }
     }
 
     pub fn resolve(e: Id, other_e: Id, tr: Option<Vec2d>, cm: &mut ComponentManager) {
