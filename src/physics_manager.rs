@@ -81,28 +81,18 @@ impl PhysicsManager {
                 let transform = cm
                     .get::<Transform>(e)
                     .and_then(|t| t.active.then_some(t.clone()))?;
-                let physical = cm
-                    .get::<Physical>(e)
-                    .and_then(|p| p.active.then_some(p))
-                    .and_then(|physical| {
-                        Some((
-                            (collider.convex_hull(&transform, physical)?),
-                            transform.clone(),
-                            Some(physical),
-                        ))
-                    })
-                    .unwrap_or((collider, transform, None));
+                let physical = cm.get::<Physical>(e).and_then(|p| p.active.then_some(p));
 
-                Some((e, physical))
+                Some((e, collider, transform, physical))
             })
             .collect();
         let checked = RwLock::new(Vec::new());
         let col: Vec<_> = entities
             .par_iter()
-            .map(|(ae, (a_col, a_transform, a_physical))| {
+            .map(|(ae, a_col, a_transform, a_physical)| {
                 let res: Vec<_> = entities
                     .iter()
-                    .filter_map(|(be, (b_col, b_transform, b_physical))| {
+                    .filter_map(|(be, b_col, b_transform, b_physical)| {
                         let res = {
                             let res = {
                                 let checked = checked.read().ok()?;
