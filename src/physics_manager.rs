@@ -8,6 +8,7 @@ use hex::{
 };
 use rayon::prelude::*;
 use std::{
+    collections::HashSet,
     sync::RwLock,
     time::{Duration, Instant},
 };
@@ -86,7 +87,7 @@ impl PhysicsManager {
                 Some((e, collider, transform, physical))
             })
             .collect();
-        let checked = RwLock::new(Vec::new());
+        let checked = RwLock::new(HashSet::new());
         let col: Vec<_> = entities
             .par_iter()
             .map(|(ae, a_col, a_transform, a_physical)| {
@@ -101,7 +102,7 @@ impl PhysicsManager {
                             };
 
                             if res {
-                                checked.write().ok()?.push((*ae, *be));
+                                checked.write().ok()?.insert((*ae, *be));
 
                                 true
                             } else {
