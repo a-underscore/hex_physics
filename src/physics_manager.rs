@@ -36,7 +36,6 @@ impl System for PhysicsManager {
                     && (t.position() - t2.position()).magnitude() <= c.boundary + c2.boundary
                 {
                     if let Some(res) = c.intersecting(&t, &t2, &c2) {
-
                         if !(c.ghost || c2.ghost) {
                             t.set_position(t.position() + res);
                             t2.set_position(t2.position() - res);
