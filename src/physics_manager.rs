@@ -1,9 +1,9 @@
 use crate::components::Collider;
 use hex::{
-    anyhow, components::Trans, system_manager::System, ComponentManager, Context, Control,
-    EntityManager,
+    anyhow, components::Trans, parking_lot::RwLock, system_manager::System, ComponentManager,
+    Context, Control, EntityManager,
 };
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 pub struct PhysicsManager;
 
@@ -15,20 +15,20 @@ impl System for PhysicsManager {
         em: Arc<RwLock<EntityManager>>,
         cm: Arc<RwLock<ComponentManager>>,
     ) -> anyhow::Result<()> {
-        let em = em.read().unwrap();
-        let cm = cm.read().unwrap();
+        let em = em.read();
+        let cm = cm.read();
         let mut entities: Vec<_> = em
             .entities()
             .filter_map(|e| Some((e, cm.get::<Trans>(e)?, cm.get::<Collider>(e)?)))
             .collect();
 
         while let Some((e, t, c)) = entities.pop() {
-            let t = &mut *t.write().unwrap();
-            let c = &mut *c.write().unwrap();
+            let t = &mut *t.write();
+            let c = &mut *c.write();
 
             for (e2, t2, c2) in &entities {
-                let t2 = &mut *t2.write().unwrap();
-                let c2 = &mut *c2.write().unwrap();
+                let t2 = &mut *t2.write();
+                let c2 = &mut *c2.write();
 
                 if c.layers.iter().any(|a| c2.layers.contains(a))
                     && !(c.ignore.iter().any(|a| c2.layers.contains(a))
