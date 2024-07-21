@@ -6,10 +6,8 @@ use hex::{
     glium::glutin::event::Event,
     math::Vec2d,
 };
-use rayon::prelude::*;
 use std::{
     collections::HashSet,
-    sync::RwLock,
     time::{Duration, Instant},
 };
 
@@ -87,28 +85,21 @@ impl PhysicsManager {
                 Some((e, collider, transform, physical))
             })
             .collect();
-        let checked = RwLock::new(HashSet::new());
+        let mut checked = HashSet::new();
         let col: Vec<_> = entities
-            .par_iter()
+            .iter()
             .map(|(ae, a_col, a_transform, a_physical)| {
                 let res: Vec<_> = entities
                     .iter()
                     .filter_map(|(be, b_col, b_transform, b_physical)| {
-                        let res = {
-                            let res = {
-                                let checked = checked.read().ok()?;
-
-                                !checked.contains(&(*ae, *be)) && !checked.contains(&(*be, *ae))
-                            };
-
-                            if res {
-                                checked.write().ok()?.insert((*ae, *be));
+                        let res =
+                            if !checked.contains(&(*ae, *be)) && !checked.contains(&(*be, *ae)) {
+                                checked.insert((*ae, *be));
 
                                 true
                             } else {
                                 false
-                            }
-                        };
+                            };
 
                         if res {
                             Self::detect(
