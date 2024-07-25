@@ -19,16 +19,16 @@ impl System for PhysicsManager {
         let cm = cm.read();
         let mut entities: Vec<_> = em
             .entities()
-            .filter_map(|e| Some((e, cm.get::<Trans>(e)?, cm.get::<Collider>(e)?)))
+            .filter_map(|e| Some((e, cm.get::<Collider>(e)?, cm.get::<Trans>(e)?)))
             .collect();
 
-        while let Some((e, t, c)) = entities.pop() {
+        while let Some((e, c, t)) = entities.pop() {
             let t = &mut *t.write();
             let c = &mut *c.write();
 
-            for (e2, t2, c2) in &entities {
-                let t2 = &mut *t2.write();
+            for (e2, c2, t2) in &entities {
                 let c2 = &mut *c2.write();
+                let t2 = &mut *t2.write();
 
                 if c.layers.iter().any(|a| c2.layers.contains(a))
                     && !(c.ignore.iter().any(|a| c2.layers.contains(a))
