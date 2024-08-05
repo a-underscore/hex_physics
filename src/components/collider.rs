@@ -1,8 +1,10 @@
 use hex::{
     components::Trans,
     nalgebra::{Vector2, Vector3},
+    parking_lot::RwLock,
     Id,
 };
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct Collider {
@@ -23,8 +25,8 @@ impl Collider {
         ignore: Vec<Id>,
         ghost: bool,
         log_collisions: bool,
-    ) -> Self {
-        Self {
+    ) -> Arc<RwLock<Self>> {
+        Arc::new(RwLock::new(Self {
             points,
             boundary,
             layers,
@@ -32,7 +34,7 @@ impl Collider {
             collisions: Vec::new(),
             ghost,
             log_collisions,
-        }
+        }))
     }
 
     pub fn rect(
@@ -41,7 +43,7 @@ impl Collider {
         ignore: Vec<Id>,
         ghost: bool,
         log_collisions: bool,
-    ) -> Self {
+    ) -> Arc<RwLock<Self>> {
         let dims1 = dims / 2.0;
 
         Self::new(
