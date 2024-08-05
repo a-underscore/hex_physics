@@ -1,7 +1,7 @@
 use crate::components::Collider;
 use hex::{
-    anyhow, components::Trans, parking_lot::RwLock, system_manager::System, ComponentManager,
-    Context, Control, EntityManager,
+    anyhow, components::Trans, parking_lot::RwLock, system_manager::System, Context, Control,
+    EntityManager,
 };
 use std::sync::Arc;
 
@@ -13,13 +13,17 @@ impl System for PhysicsManager {
         _: Arc<RwLock<Control>>,
         _: Arc<RwLock<Context>>,
         em: Arc<RwLock<EntityManager>>,
-        cm: Arc<RwLock<ComponentManager>>,
     ) -> anyhow::Result<()> {
         let em = em.read();
-        let cm = cm.read();
         let mut entities: Vec<_> = em
             .entities()
-            .filter_map(|e| Some((e, cm.get::<Collider>(e)?, cm.get::<Trans>(e)?)))
+            .filter_map(|e| {
+                Some((
+                    e,
+                    em.get_component::<Collider>(e)?,
+                    em.get_component::<Trans>(e)?,
+                ))
+            })
             .collect();
 
         while let Some((e, c, t)) = entities.pop() {

@@ -1,5 +1,4 @@
 use hex::{
-    component_manager::Component,
     components::Trans,
     nalgebra::{Vector2, Vector3},
     Id,
@@ -136,5 +135,3 @@ impl Collider {
         min.map(|(m, a)| a.normalize() * m)
     }
 }
-
-impl Component for Collider {}
