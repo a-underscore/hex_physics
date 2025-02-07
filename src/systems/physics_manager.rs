@@ -64,3 +64,5 @@ impl System for PhysicsManager {
         Ok(())
     }
 }
+
+impl System for PhysicsManager {}
