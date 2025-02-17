@@ -9,6 +9,7 @@ use hex::{
 };
 use std::sync::Arc;
 
+#[derive(Default)]
 pub struct PhysicsManager;
 
 impl System for PhysicsManager {
