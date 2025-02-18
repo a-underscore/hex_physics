@@ -55,11 +55,11 @@ impl System for PhysicsManager {
                         {
                             if let Some(res) = c.intersecting(t, t2, c2) {
                                 if !c.ghost {
-                                    t.set_position(t.position() + res);
+                                    t.set_position(t.position() - res);
                                 }
 
                                 if !c2.ghost {
-                                    t2.set_position(t2.position() - res);
+                                    t2.set_position(t2.position() + res);
                                 }
 
                                 if c.log_collisions && !c.collisions.contains(e2) {
