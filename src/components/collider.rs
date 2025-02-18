@@ -61,6 +61,35 @@ impl Collider {
         )
     }
 
+    pub fn oct(
+        dims: Vector2<f32>,
+        layers: HashSet<Id>,
+        ignore: HashSet<Id>,
+        ghost: bool,
+        log_collisions: bool,
+    ) -> Arc<RwLock<Self>> {
+        let dims1 = dims / 2.0;
+        let dims2 = Vector2::new(dims1.magnitude(), dims1.magnitude());
+
+        Self::new(
+            vec![
+                Vector2::new(-dims1.x, -dims1.y),
+                Vector2::new(-dims2.x, 0.0),
+                Vector2::new(-dims1.x, dims1.y),
+                Vector2::new(0.0, dims2.y),
+                Vector2::new(dims1.x, dims1.y),
+                Vector2::new(dims2.x, 0.0),
+                Vector2::new(dims1.x, -dims1.y),
+                Vector2::new(0.0, -dims2.y),
+            ],
+            dims.magnitude(),
+            layers,
+            ignore,
+            ghost,
+            log_collisions,
+        )
+    }
+
     pub fn intersecting(
         &self,
         transform: &Trans,
@@ -79,7 +108,6 @@ impl Collider {
             .cloned()
             .map(|p| (transform2.matrix() * Vector3::new(p.x, p.y, 1.0)).xy())
             .collect();
-
         let mut min = None;
 
         for i in 0..points.len() {
