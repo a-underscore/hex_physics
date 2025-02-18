@@ -4,14 +4,14 @@ use hex::{
     parking_lot::RwLock,
     Id,
 };
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 #[derive(Clone)]
 pub struct Collider {
     pub points: Vec<Vector2<f32>>,
     pub boundary: f32,
-    pub layers: Vec<Id>,
-    pub ignore: Vec<Id>,
+    pub layers: HashSet<Id>,
+    pub ignore: HashSet<Id>,
     pub collisions: Vec<Id>,
     pub ghost: bool,
     pub log_collisions: bool,
@@ -21,8 +21,8 @@ impl Collider {
     pub fn new(
         points: Vec<Vector2<f32>>,
         boundary: f32,
-        layers: Vec<Id>,
-        ignore: Vec<Id>,
+        layers: HashSet<Id>,
+        ignore: HashSet<Id>,
         ghost: bool,
         log_collisions: bool,
     ) -> Arc<RwLock<Self>> {
@@ -39,8 +39,8 @@ impl Collider {
 
     pub fn rect(
         dims: Vector2<f32>,
-        layer: Vec<Id>,
-        ignore: Vec<Id>,
+        layer: HashSet<Id>,
+        ignore: HashSet<Id>,
         ghost: bool,
         log_collisions: bool,
     ) -> Arc<RwLock<Self>> {
