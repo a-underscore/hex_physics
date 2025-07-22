@@ -1,7 +1,7 @@
-use hex::Vector2;
+use hex::nalgebra::Vector2;
 
 #[derive(Clone)]
 pub enum ColliderType {
     Circle(f32),
-    Points((f32, Vec<Vector2<f32>>)),
+    Points(Vec<Vector2<f32>>),
 }

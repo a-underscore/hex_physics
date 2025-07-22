@@ -50,8 +50,10 @@ impl System for PhysicsManager {
                         if c.layers.iter().any(|a| c2.layers.contains(a))
                             && !(c.ignore.iter().any(|a| c2.layers.contains(a))
                                 || c2.ignore.iter().any(|b| c.layers.contains(b)))
-                            && (t.position() - t2.position()).magnitude()
-                                <= c.boundary + c2.boundary
+                            && c.boundary
+                                .zip(c2.boundary)
+                                .map(|(b, b2)| (t.position() - t2.position()).magnitude() <= b + b2)
+                                .unwrap_or(true)
                         {
                             if let Some(res) = c.intersecting(t, t2, c2) {
                                 if !c.ghost {

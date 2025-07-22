@@ -2,7 +2,6 @@ pub mod collider_type;
 
 use collider_type::ColliderType;
 use hex::{
-    anyhow,
     components::Trans,
     nalgebra::{Vector2, Vector3},
     parking_lot::RwLock,
@@ -13,7 +12,7 @@ use std::{collections::HashSet, sync::Arc};
 #[derive(Clone)]
 pub struct Collider {
     pub collider_type: ColliderType,
-    pub boundary: f32,
+    pub boundary: Option<f32>,
     pub layers: HashSet<Id>,
     pub ignore: HashSet<Id>,
     pub collisions: Vec<Id>,
@@ -24,7 +23,7 @@ pub struct Collider {
 impl Collider {
     pub fn new(
         collider_type: ColliderType,
-        boundary: f32,
+        boundary: Option<f32>,
         layers: HashSet<Id>,
         ignore: HashSet<Id>,
         ghost: bool,
@@ -51,8 +50,13 @@ impl Collider {
         let dims1 = dims / 2.0;
 
         Self::new(
-            ColliderType::Points(dims),
-            dims.magnitude(),
+            ColliderType::Points(vec![
+                Vector2::new(-dims1.x, -dims1.y),
+                Vector2::new(-dims1.x, dims1.y),
+                Vector2::new(dims1.x, dims1.y),
+                Vector2::new(dims1.x, -dims1.y),
+            ]),
+            Some(dims.magnitude()),
             layer,
             ignore,
             ghost,
@@ -60,7 +64,7 @@ impl Collider {
         )
     }
 
-    fn transform_points(points: Vec<Vector2<f32>>, transform: &Trans) -> Vec<Vector2<f32>> {
+    fn transform_points(points: &[Vector2<f32>], transform: &Trans) -> Vec<Vector2<f32>> {
         let points: Vec<_> = points
             .iter()
             .cloned()
@@ -130,8 +134,8 @@ impl Collider {
 
         match (&self.collider_type, &c2.collider_type) {
             (ColliderType::Points(points), ColliderType::Points(points2)) => {
-                let points = Self::transform_points(points, &transform);
-                let points2 = Self::transform_points(points2, &transform2);
+                let points = Self::transform_points(&points, &transform);
+                let points2 = Self::transform_points(&points2, &transform2);
 
                 for i in 0..points.len() {
                     let p1 = points[i];
@@ -151,7 +155,6 @@ impl Collider {
                 } else {
                     (transform2, transform)
                 };
-                let old_points = points;
                 let points = Self::transform_points(points, transform);
 
                 for i in 0..points.len() {
