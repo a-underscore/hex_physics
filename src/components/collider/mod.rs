@@ -134,8 +134,8 @@ impl Collider {
 
         match (&self.collider_type, &c2.collider_type) {
             (ColliderType::Points(points), ColliderType::Points(points2)) => {
-                let points = Self::transform_points(&points, &transform);
-                let points2 = Self::transform_points(&points2, &transform2);
+                let points = Self::transform_points(points, transform);
+                let points2 = Self::transform_points(points2, transform2);
 
                 for i in 0..points.len() {
                     let p1 = points[i];
